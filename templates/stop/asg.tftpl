@@ -1,0 +1,151 @@
+{
+  "StartAt": "ListResourcesASG",
+  "States": {
+    "ListResourcesASG": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "asg",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapASG"
+    },
+    "ResourceMapASG": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "WaitASG",
+        "States": {
+          "WaitASG": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "GetDesiredCountASG"
+          },
+          "GetDesiredCountASG": {
+            "Type": "Task",
+            "Next": "CheckAlreadyStoppedASG",
+            "Parameters": {
+              "AutoScalingGroupNames.$": "States.Array($.details.groupName)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:autoscaling:describeAutoScalingGroups",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "ResultSelector": {
+              "minSize.$": "States.JsonToString($.AutoScalingGroups[0].MinSize)",
+              "maxSize.$": "States.JsonToString($.AutoScalingGroups[0].MaxSize)"
+            },
+            "ResultPath": "$.autoscaling"
+          },
+          "CheckAlreadyStoppedASG": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "And": [
+                  {
+                    "Variable": "$.autoscaling.minSize",
+                    "StringEquals": "0"
+                  },
+                  {
+                    "Variable": "$.autoscaling.maxSize",
+                    "StringEquals": "0"
+                  }
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "Default": "StoreDesiredCountASG"
+          },
+          "StoreDesiredCountASG": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+              "TableName": "${dynamodb_table_name}",
+              "Key": {
+                "resourceArn": {
+                  "S.$": "$.resourceArn"
+                },
+                "service": {
+                  "S": "ec2"
+                }
+              },
+              "UpdateExpression": "SET autoscaling = :autoscaling, resourceTtl = :resourceTtl",
+              "ExpressionAttributeValues": {
+                ":autoscaling": {
+                  "M.$": "$.autoscaling"
+                },
+                ":resourceTtl": {
+                  "N.$": "$.resourceTtl"
+                }
+              }
+            },
+            "ResultSelector": {
+              "minSize": "0",
+              "maxSize": "0"
+            },
+            "ResultPath": "$.autoscaling",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "Next": "UpdateASG"
+          },
+          "UpdateASG": {
+            "Type": "Task",
+            "Parameters": {
+              "AutoScalingGroupName.$": "$.details.groupName",
+              "MinSize.$": "States.StringToJson($.autoscaling.minSize)",
+              "MaxSize.$": "States.StringToJson($.autoscaling.maxSize)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:autoscaling:updateAutoScalingGroup",
+            "End": true,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "ResultPath": null
+          },
+          "ErrorCatcherASG": {
+            "Type": "Pass",
+            "End": true
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.data",
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "StartAt": "ListResourcesRDS",
+  "States": {
+    "ListResourcesRDS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "rds",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapRDS"
+    },
+    "ResourceMapRDS": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "WaitRDS",
+        "States": {
+          "WaitRDS": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "ChoiceRDS"
+          },
+          "ChoiceRDS": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.details.clusterIdentifier",
+                "IsPresent": true,
+                "Next": "StopClusterRDS"
+              },
+              {
+                "Variable": "$.details.instanceIdentifier",
+                "IsPresent": true,
+                "Next": "StopInstanceRDS"
+              }
+            ]
+          },
+          "StopClusterRDS": {
+            "Type": "Task",
+            "Parameters": {
+              "DbClusterIdentifier.$": "$.details.clusterIdentifier"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:rds:stopDBCluster",
+            "End": true,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherRDS"
+              }
+            ]
+          },
+          "ErrorCatcherRDS": {
+            "Type": "Pass",
+            "End": true
+          },
+          "StopInstanceRDS": {
+            "Type": "Task",
+            "Parameters": {
+              "DbInstanceIdentifier.$": "$.details.instanceIdentifier"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:rds:stopDBInstance",
+            "End": true,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherRDS"
+              }
+            ]
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.data",
+      "End": true
+    }
+  }
+}

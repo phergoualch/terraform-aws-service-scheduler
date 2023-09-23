@@ -1,0 +1,73 @@
+{
+  "StartAt": "ListResourcesEC2",
+  "States": {
+    "ListResourcesEC2": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "ec2",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapEC2"
+    },
+    "ResourceMapEC2": {
+      "Type": "Map",
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "WaitEC2",
+        "States": {
+          "WaitEC2": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "StopInstancesEC2"
+          },
+          "StopInstancesEC2": {
+            "Type": "Task",
+            "Parameters": {
+              "InstanceIds.$": "$.details.instanceID"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ec2:stopInstances",
+            "End": true,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherEC2"
+              }
+            ]
+          },
+          "ErrorCatcherEC2": {
+            "Type": "Pass",
+            "End": true
+          }
+        }
+      },
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.data"
+    }
+  }
+}

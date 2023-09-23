@@ -1,0 +1,140 @@
+{
+  "StartAt": "ListResourcesECS",
+  "States": {
+    "ListResourcesECS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "ecs",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapECS"
+    },
+    "ResourceMapECS": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "WaitECS",
+        "States": {
+          "WaitECS": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "GetDesiredCountECS"
+          },
+          "GetDesiredCountECS": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:getItem",
+            "Parameters": {
+              "TableName": "${dynamodb_table_name}",
+              "Key": {
+                "resourceArn": {
+                  "S.$": "$.resourceArn"
+                },
+                "service": {
+                  "S": "ecs"
+                }
+              },
+              "ProjectionExpression": "autoscaling"
+            },
+            "ResultPath": "$.dynamoResult",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "Next": "InDBECS",
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "BackoffRate": 2,
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3
+              }
+            ]
+          },
+          "InDBECS": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.dynamoResult.Item",
+                "IsPresent": true,
+                "Comment": "Yes",
+                "Next": "FormatDynamoDBECS"
+              }
+            ],
+            "Default": "ErrorCatcherECS"
+          },
+          "FormatDynamoDBECS": {
+            "Type": "Pass",
+            "Next": "UpdateECS",
+            "ResultPath": "$.resource.autoscaling",
+            "Parameters": {
+              "desiredCount.$": "$.dynamoResult.Item.autoscaling.M.desiredCount.S"
+            }
+          },
+          "UpdateECS": {
+            "Type": "Task",
+            "Parameters": {
+              "Cluster.$": "$.details.clusterName",
+              "Service.$": "$.details.serviceName",
+              "DesiredCount.$": "States.StringToJson($.resource.autoscaling.desiredCount)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ecs:updateService",
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "ECS.ServiceNotFoundException",
+                  "ECS.ClusterNotFoundException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "ResultPath": null,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "End": true
+          },
+          "ErrorCatcherECS": {
+            "Type": "Pass",
+            "End": true
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.data",
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "Comment": "This is a state machine to schedule services for cost savings",
+  "StartAt": "Parallel",
+  "States": {
+    "Parallel": {
+      "Type": "Parallel",
+      "Branches": ${branches},
+      "End": true
+    }
+  }
+}

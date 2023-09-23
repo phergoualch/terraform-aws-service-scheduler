@@ -1,0 +1,71 @@
+{
+  "StartAt": "ListResourcesLambda",
+  "States": {
+    "ListResourcesLambda": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "lambda",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapLambda"
+    },
+    "ResourceMapLambda": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "WaitLambda",
+        "States": {
+          "WaitLambda": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "StopLambda"
+          },
+          "StopLambda": {
+            "Type": "Task",
+            "Parameters": {
+              "FunctionName": "${list_resources_lambda_arn}",
+              "ReservedConcurrentExecutions.$": "States.StringToJson('0')"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:lambda:putFunctionConcurrency",
+            "End": true,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherLambda"
+              }
+            ]
+          },
+          "ErrorCatcherLambda": {
+            "Type": "Pass",
+            "End": true
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.data",
+      "End": true
+    }
+  }
+}

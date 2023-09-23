@@ -1,0 +1,80 @@
+{
+  "StartAt": "ListResourcesAppRunner",
+  "States": {
+    "ListResourcesAppRunner": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "apprunner",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapAppRunner"
+    },
+    "ResourceMapAppRunner": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "WaitAppRunner",
+        "States": {
+          "WaitAppRunner": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "StopServiceAppRunner"
+          },
+          "StopServiceAppRunner": {
+            "Type": "Task",
+            "Parameters": {
+              "ServiceArn.$": "$.resourceArn"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:apprunner:pauseService",
+            "End": true,
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 60,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherAppRunner"
+              }
+            ]
+          },
+          "ErrorCatcherAppRunner": {
+            "Type": "Pass",
+            "End": true
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.data",
+      "End": true
+    }
+  }
+}

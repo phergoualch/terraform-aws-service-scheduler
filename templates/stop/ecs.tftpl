@@ -1,0 +1,153 @@
+{
+  "StartAt": "ListResourcesECS",
+  "States": {
+    "ListResourcesECS": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "service": "ecs",
+          "details.$": "$"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "ClientError"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "ResultSelector": {
+        "data.$": "$.Payload"
+      },
+      "ResultPath": "$.lambdaResponse",
+      "Next": "ResourceMapECS"
+    },
+    "ResourceMapECS": {
+      "Type": "Map",
+      "Iterator": {
+        "StartAt": "WaitECS",
+        "States": {
+          "WaitECS": {
+            "Type": "Wait",
+            "TimestampPath": "$.nextEventTime",
+            "Next": "GetDesiredCountECS"
+          },
+          "GetDesiredCountECS": {
+            "Type": "Task",
+            "Parameters": {
+              "Cluster.$": "$.details.clusterName",
+              "Services.$": "States.Array($.details.serviceName)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ecs:describeServices",
+            "ResultSelector": {
+              "desiredCount.$": "States.JsonToString($.Services[0].DesiredCount)"
+            },
+            "ResultPath": "$.autoscaling",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "Next": "CheckAlreadyStoppedECS"
+          },
+          "CheckAlreadyStoppedECS": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.autoscaling.desiredCount",
+                "StringEquals": "0",
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "Default": "StoreDesiredCountECS"
+          },
+          "StoreDesiredCountECS": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "Parameters": {
+              "TableName": "${dynamodb_table_name}",
+              "Key": {
+                "resourceArn": {
+                  "S.$": "$.resourceArn"
+                },
+                "service": {
+                  "S": "ecs"
+                }
+              },
+              "UpdateExpression": "SET autoscaling = :autoscaling, resourceTtl = :resourceTtl",
+              "ExpressionAttributeValues": {
+                ":autoscaling": {
+                  "M.$": "$.autoscaling"
+                },
+                ":resourceTtl": {
+                  "N.$": "$.resourceTtl"
+                }
+              }
+            },
+            "ResultSelector": {
+              "desiredCount": "0"
+            },
+            "ResultPath": "$.autoscaling",
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "Next": "UpdateECS"
+          },
+          "ErrorCatcherECS": {
+            "Type": "Pass",
+            "End": true
+          },
+          "UpdateECS": {
+            "Type": "Task",
+            "Parameters": {
+              "Cluster.$": "$.details.clusterName",
+              "Service.$": "$.details.serviceName",
+              "DesiredCount.$": "States.StringToJson($.autoscaling.desiredCount)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ecs:updateService",
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "ECS.ServiceNotFoundException",
+                  "ECS.ClusterNotFoundException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "ResultPath": null,
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "End": true
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.data",
+      "End": true
+    }
+  }
+}
