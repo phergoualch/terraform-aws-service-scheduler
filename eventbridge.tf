@@ -1,6 +1,6 @@
 resource "aws_cloudwatch_event_rule" "this" {
-  name                = local.full_deployment_name
-  description         = "Trigger ${local.full_deployment_name} state machines"
+  name                = var.app_name
+  description         = "Trigger ${var.app_name} state machines"
   schedule_expression = "rate(${var.execution_interval} hours)"
 }
 
@@ -16,7 +16,7 @@ resource "aws_cloudwatch_event_target" "main" {
 }
 
 resource "aws_iam_role" "eventbridge" {
-  name = "${local.full_deployment_name}-eventbridge"
+  name = "${var.app_name}-eventbridge"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

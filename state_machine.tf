@@ -2,7 +2,7 @@ resource "aws_sfn_state_machine" "main" {
   for_each = toset(["start", "stop"])
   #checkov:skip=CKV_AWS_285: "Ensure State Machine has execution history logging enabled"
   #checkov:skip=CKV_AWS_284: "Ensure State Machine has X-Ray tracing enabled"
-  name     = "${local.full_deployment_name}-${each.key}"
+  name     = "${var.app_name}-${each.key}"
   role_arn = aws_iam_role.state_machine.arn
 
   definition = templatefile("${path.module}/templates/main.tftpl", {
@@ -17,7 +17,7 @@ resource "aws_sfn_state_machine" "main" {
 }
 
 resource "aws_iam_role" "state_machine" {
-  name = "${local.full_deployment_name}-state-machine"
+  name = "${var.app_name}-state-machine"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

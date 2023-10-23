@@ -3,7 +3,7 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 resource "aws_ssm_document" "manual" {
-  name            = "${local.full_deployment_name}-manual"
+  name            = "${var.app_name}-manual"
   document_type   = "Automation"
   document_format = "YAML"
 

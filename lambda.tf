@@ -11,7 +11,8 @@ resource "aws_lambda_function" "list_resources" {
   #checkov:skip=CKV_AWS_117: "Ensure that AWS Lambda function is configured inside a VPC"
   #checkov:skip=CKV_AWS_50: "X-ray tracing is enabled for Lambda"
   #checkov:skip=CKV_AWS_272: "Ensure AWS Lambda function is configured to validate code-signing"
-  function_name    = "${local.full_deployment_name}-list-resources"
+  function_name    = "${var.app_name}-list-resources"
+  description      = "Used by the ${var.app_name} state machines to list all resources in the account"
   role             = aws_iam_role.list_resources.arn
   handler          = "handler.handler"
   runtime          = "python3.10"
@@ -35,12 +36,12 @@ resource "aws_lambda_function" "list_resources" {
 resource "aws_cloudwatch_log_group" "list_resources" {
   #checkov:skip=CKV_AWS_158: "Ensure that CloudWatch Log Group is encrypted by KMS"
   #checkov:skip=CKV_AWS_338: "Ensure CloudWatch log groups retains logs for at least 1 year"
-  name              = "/aws/lambda/${local.full_deployment_name}-list-resources"
+  name              = "/aws/lambda/${var.app_name}-list-resources"
   retention_in_days = 7
 }
 
 resource "aws_iam_role" "list_resources" {
-  name = "${local.full_deployment_name}-list-resources"
+  name = "${var.app_name}-list-resources"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
