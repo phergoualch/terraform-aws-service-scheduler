@@ -34,9 +34,12 @@ To add a resource to the scheduler, multiple tags need to be added to the resour
 | Key                      | Description                                                                                                                                                     | Examples                                                                                                                      |
 |--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
 | finops:enabled           | **Required**: Can be true or false, if not present or different than false, the resource will not be scheduled                                                  | `true` or `false`                                                                                                             |
-| finops:active-days       | *Optional*: The days of the week that you want the scheduler to schedule this resource (Required if start-active-days AND stop-active-days are not specified)   | `MON-FRI` <br> `MON`  <br> `MON,WED,FRI` <br> `MON,WED-FRI,SUN`                                                               |
+| finops:active-days       | *Optional*: The days of the week that you want the scheduler to schedule this resource (Default to MON-SUN)   | `MON-FRI` <br> `MON`  <br> `MON,WED,FRI` <br> `MON,WED-FRI,SUN`                                                               |
 | finops:start-active-days | *Optional*: The days of the week that you want the scheduler to start this resource (Overwrite active-days if both specified)                                   | Same as active-days                                                                                                           |
 | finops:stop-active-days  | *Optional*: The days of the week that you want the scheduler to stop this resource (Overwrite active-days if both specified)                                    | Same as active-days                                                                                                           |
+| finops:active-weeks       | *Optional*: The days of the week that you want the scheduler to schedule this resource (Default to 1-53)   | `10-40` <br> `5`  <br> `10-20,30-40` <br> `5,30-50,53`                                                               |
+| finops:start-active-weeks | *Optional*: The days of the week that you want the scheduler to start this resource (Overwrite active-weeks if both specified)                                   | Same as active-days                                                                                                           |
+| finops:stop-active-weeks  | *Optional*: The days of the week that you want the scheduler to stop this resource (Overwrite active-weeks if both specified)                                    | Same as active-days                                                                                                           |
 | finops:start-time        | *Optional*: The time of the day that you want to start your resource                                                                                            | `18:00` <br> `07:48`                                                                                                          |
 | finops:stop-time         | *Optional*: The time of the day that you want to stop your resource                                                                                             | Same as start-time                                                                                                            |
 | finops:timezone          | *Optional*: The timezone used to calculate the times. If not specified, the default timezone set in Terraform is used                                           | `Europe/Paris` <br> `America/New_York` <br> [List of timezones](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
@@ -132,6 +135,20 @@ tags = {
   "finops:start-time"  = "08:00"
   "finops:stop-time"   = "18:00"
   "finops:timezone"    = "America/New_York"
+}
+```
+
+5. Resources to be started the 1st monday of the 10th week and stopped the 1st friday of the 20th week.
+
+```hcl
+tags = {
+  "finops:enabled"            = true
+  "finops:start-active-days"  = "MON"
+  "finops:start-active-weeks" = "10"
+  "finops:stop-active-days"   = "FRI"
+  "finops:stop-active-weeks"  = "20"
+  "finops:start-time"         = "08:00"
+  "finops:stop-time"          = "18:00"
 }
 ```
 
