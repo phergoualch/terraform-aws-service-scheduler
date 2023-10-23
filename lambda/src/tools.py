@@ -61,9 +61,11 @@ def get_resource_values(tags, action):
     -------
     resource_values : dict
     """
+
     resource_values = {
         "event_time": None,
-        "active_days": None,
+        "active_days": "MON-SUN",
+        "active_weeks": "1-53",
         "event_timezone": os.environ.get("DEFAULT_TIMEZONE"),
     }
 
@@ -76,10 +78,14 @@ def get_resource_values(tags, action):
             resource_values["active_days"] = tag["value"]
         elif tag["key"] == f"finops:timezone":
             resource_values["event_timezone"] = tag["value"]
+        elif tag["key"] == f"finops:active-weeks":
+            resource_values["active_weeks"] = tag["value"]
+        elif tag["key"] == f"finops:{action}-active-weeks":
+            resource_values["active_weeks"] = tag["value"]
         elif tag["key"] == f"finops:enabled" and tag["value"] != "true":
             return None
 
-    if not resource_values["event_time"] or not resource_values["active_days"]:
+    if not resource_values["event_time"]:
         return None
     else:
         return resource_values
@@ -161,6 +167,49 @@ def is_day_in_range(day, day_range):
     return False
 
 
+def is_week_in_range(week, week_range):
+    """
+    Check if a given week is in a given week range
+
+    Parameters
+    ----------
+    week : str
+        The week to check
+    week_range : str
+        The week range to check against
+        Format: 1-52 or 1,2,3 or 1,2-4,52 or 1
+
+    Returns
+    -------
+    bool
+    """
+    week_range = week_range.upper()
+
+    # Split the week_range string into individual week parts
+    week_parts = week_range.split(",")
+
+    for part in week_parts:
+        if "-" in part:
+            start_week, end_week = part.split("-")
+            if int(start_week) <= int(end_week):
+                if int(start_week) <= int(week) <= int(end_week):
+                    return True
+            else:
+                if int(start_week) <= int(week) or int(week) <= int(end_week):
+                    return True
+        else:
+            if "," in part:
+                sub_parts = part.split("-")
+                for sub_part in sub_parts:
+                    if int(week) == int(sub_part):
+                        return True
+            else:
+                if int(week) == int(part):
+                    return True
+
+    return False
+
+
 def get_next_event_datetime(resource_values):
     """
     Get the next occurrence of the event in a datetime format
@@ -190,6 +239,7 @@ def get_next_event_datetime(resource_values):
     # Check if the event is today and has not passed yet
     if (
         is_day_in_range(current_datetime.strftime("%a").upper(), resource_values["active_days"])
+        and is_week_in_range(current_datetime.strftime("%U"), resource_values["active_weeks"])
         and current_datetime.time() < event_time
     ):
         next_event_datetime = current_datetime.replace(
@@ -198,7 +248,9 @@ def get_next_event_datetime(resource_values):
     else:
         # Find the next occurrence of the event
         next_day = current_datetime + timedelta(days=1)
-        while not is_day_in_range(next_day.strftime("%a").upper(), resource_values["active_days"]):
+        while not is_day_in_range(
+            next_day.strftime("%a").upper(), resource_values["active_days"]
+        ) and not is_week_in_range(next_day.strftime("%U"), resource_values["active_weeks"]):
             next_day += timedelta(days=1)
 
         return next_day.replace(hour=event_time.hour, minute=event_time.minute, second=0, microsecond=0)
