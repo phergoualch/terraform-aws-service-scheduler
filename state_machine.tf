@@ -209,8 +209,8 @@ resource "aws_iam_role" "state_machine" {
           {
             Effect = "Allow",
             Action = [
-              "docdb:StartDBCluster",
-              "docdb:StopDBCluster",
+              "rds:StartDBCluster",
+              "rds:StopDBCluster",
             ],
             Resource = "*",
             Condition = {
