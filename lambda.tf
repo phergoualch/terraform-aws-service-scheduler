@@ -158,8 +158,8 @@ resource "aws_iam_role" "list_resources" {
           {
             Effect = "Allow",
             Action = [
-              "docdb:Describe*",
-              "docdb:ListTagsForResource",
+              "rds:Describe*",
+              "rds:ListTagsForResource",
             ],
             Resource = "*",
           }
