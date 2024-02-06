@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesAppRunner",
+  "States": {
+    "ListResourcesAppRunner": {
+      "Next": "ResourceMapAppRunner",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "apprunner"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapAppRunner": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitAppRunner",
+        "States": {
+          "ErrorCatcherAppRunner": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StopServiceAppRunner": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherAppRunner"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "ServiceArn.$": "$.id"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:apprunner:pauseService",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitAppRunner": {
+            "Next": "StopServiceAppRunner",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

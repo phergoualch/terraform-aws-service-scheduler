@@ -1,0 +1,134 @@
+{
+  "StartAt": "ListResourcesASG",
+  "States": {
+    "ListResourcesASG": {
+      "Next": "ResourceMapASG",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "asg"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapASG": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitASG",
+        "States": {
+          "ErrorCatcherASG": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "FormatDynamoDBASG": {
+            "Next": "UpdateAutoScalingGroup",
+            "Parameters": {
+              "maxSize.$": "$.dynamoResult.Item.autoscaling.M.maxSize.S",
+              "minSize.$": "$.dynamoResult.Item.autoscaling.M.minSize.S"
+            },
+            "ResultPath": "$.resource.autoscaling",
+            "Type": "Pass"
+          },
+          "GetDesiredCountASG": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "Next": "InDBASG",
+            "Parameters": {
+              "Key": {
+                "id": {
+                  "S.$": "$.id"
+                }
+              },
+              "ProjectionExpression": "autoscaling",
+              "TableName": "${dynamodb_table_name}"
+            },
+            "Resource": "arn:aws:states:::dynamodb:getItem",
+            "ResultPath": "$.dynamoResult",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 5,
+                "MaxAttempts": 3
+              }
+            ],
+            "Type": "Task"
+          },
+          "InDBASG": {
+            "Choices": [
+              {
+                "Comment": "Yes",
+                "IsPresent": true,
+                "Next": "FormatDynamoDBASG",
+                "Variable": "$.dynamoResult.Item"
+              }
+            ],
+            "Default": "ErrorCatcherASG",
+            "Type": "Choice"
+          },
+          "UpdateAutoScalingGroup": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "AutoScalingGroupName.$": "$.attributes.name",
+              "MaxSize.$": "States.StringToJson($.resource.autoscaling.maxSize)",
+              "MinSize.$": "States.StringToJson($.resource.autoscaling.minSize)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:autoscaling:updateAutoScalingGroup",
+            "ResultPath": null,
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitASG": {
+            "Next": "GetDesiredCountASG",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

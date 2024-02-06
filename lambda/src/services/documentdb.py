@@ -1,67 +1,51 @@
-import os
+import logging
+from typing import Dict, List
 
-import boto3
-from tools import get_event_timestamp
+from models import Resource, Tag, Service
+from models.enums import Action
 
 
-class DocumentDB:
-    def __init__(self):
-        self.documentdb_client = boto3.client("docdb")
+logger = logging.getLogger(__name__)
 
-    def list_resources(self, action: str, selector: str):
+
+class DocumentDB(Service):
+    def __init__(self, action: Action, parameters: Dict = None):
+        super().__init__("docdb", action, parameters)
+
+    def list_resources(self) -> List[Resource]:
         """
-        Get all DocumentDB clusters in the account and return them as a list
-
-        Parameters
-        ----------
-        action : str
-            The action of the event (start or stop)
-        selector : str
-            The tags selector in case of manual action
+        Get all DocumentDB clusters in the account and return them as a list of Resource objects.
 
         Returns
         -------
-        resources : List[Dict]
+        resources : List[Resource]
         """
-        payload = []
-        params = {}
+        resources = []
+        paginator = self.client.get_paginator("describe_db_clusters")
 
-        print(">> Listing DocumentDB clusters")
+        logger.info("Listing DocumentDB clusters")
 
-        while params.get("Marker") != "":
-            describe_response = self.documentdb_client.describe_db_clusters(
-                Filters=[{"Name": "engine", "Values": ["docdb"]}], **params
-            )
+        try:
+            for page in paginator.paginate(Filters=[{"Name": "engine", "Values": ["docdb"]}]):
+                for cluster in page["DBClusters"]:
+                    try:
+                        tags = self.client.list_tags_for_resource(ResourceName=cluster["DBClusterArn"])
+                    except Exception as e:
+                        logger.warning(f"Error listing tags for DocumentDB cluster {cluster['DBClusterArn']}: {e}")
+                        continue
 
-            if len(describe_response["DBClusters"]) != 0:
-                for cluster in describe_response["DBClusters"]:
-                    tags = self.documentdb_client.list_tags_for_resource(ResourceName=cluster["DBClusterArn"])
-
-                    cluster_event_time = get_event_timestamp(
-                        [{"key": tag["Key"], "value": tag["Value"]} for tag in tags["TagList"]], action, selector
+                    resources.append(
+                        Resource(
+                            id_=cluster["DBClusterArn"],
+                            service=self,
+                            tags=[Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]],
+                            attributes={"name": cluster["DBClusterIdentifier"]},
+                        )
                     )
 
-                    resource_details = {
-                        "resourceArn": cluster["DBClusterArn"],
-                        "details": {"clusterIdentifier": cluster["DBClusterIdentifier"]},
-                        "nextEventTime": cluster_event_time,
-                    }
+            logger.info(f"Found {len(resources)} DocumentDB clusters")
+            return resources
 
-                    if cluster_event_time:
-                        print(
-                            f">> DocumentDB cluster {cluster['DBClusterIdentifier']} will {action} on {cluster_event_time}"
-                        )
-
-                        payload.append(resource_details)
-                    else:
-                        print(
-                            f">> No {action} event for DocumentDB cluster {cluster['DBClusterIdentifier']} in the next {os.environ.get('EXECUTION_INTERVAL')} hours"
-                        )
-
-                params["Marker"] = describe_response.get("Marker", "")
-            else:
-                break
-
-        payload = sorted(payload, key=lambda x: x["nextEventTime"])
-
-        return payload
+        except Exception as e:
+            logger.error(f"Error listing DocumentDB clusters: {e}")
+            raise e

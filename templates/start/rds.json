@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesRDS",
+  "States": {
+    "ListResourcesRDS": {
+      "Next": "ResourceMapRDS",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "rds"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapRDS": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitRDS",
+        "States": {
+          "ErrorCatcherRDS": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StartInstanceRDS": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherRDS"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "DbInstanceIdentifier.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:rds:startDBInstance",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitRDS": {
+            "Next": "StartInstanceRDS",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

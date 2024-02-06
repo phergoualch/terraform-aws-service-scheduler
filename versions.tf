@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.1.7"
+  required_version = ">= 1.5.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 4.10"
+      version = ">= 5.32.0"
     }
     archive = {
       source  = "hashicorp/archive"

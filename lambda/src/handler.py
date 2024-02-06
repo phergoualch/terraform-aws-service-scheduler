@@ -1,36 +1,78 @@
-from services import ASG, EC2, ECS, RDS, DocumentDB, Lambda, AppRunner
+import logging
+
+from services import ASG, EC2, AppRunner, DocumentDB, RDS, Aurora, ECS, Lambda
+from models import Service
+from models.enums import Action
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("handler")
+
+
+def ServiceFactory(service: str, action: Action) -> Service:
+    """
+    Create and return an instance of the specified service based on the provided service name and action.
+
+    Parameters
+    ----------
+    service : str
+        The name of the service.
+    action : Action
+        The action to be performed (start or stop).
+
+    Returns
+    -------
+    Service
+        An instance of the specified service.
+    """
+    services = {
+        "ec2": EC2,
+        "documentdb": DocumentDB,
+        "asg": ASG,
+        "apprunner": AppRunner,
+        "rds": RDS,
+        "aurora": Aurora,
+        "ecs": ECS,
+        "lambda": Lambda,
+    }
+
+    return services[service](action)
 
 
 def handler(event, context):
-    service = event["service"]
-    action = event["details"]["action"]
-    selector = event["details"].get("selector", "")
-    services = event["details"].get("services", None)
-    if not services or services == "all" or service in services.split(","):
-        pass
-    else:
-        return []
+    """
+    Lambda handler function to process resources based on the specified service and action.
 
-    if service == "ecs":
-        return ECS().list_resources(action=action, selector=selector)
+    Parameters
+    ----------
+    event : dict
+        The Lambda event object.
+    context : LambdaContext
+        The Lambda context object.
 
-    elif service == "asg":
-        return ASG().list_resources(action=action, selector=selector)
+    Returns
+    -------
+    List[dict]
+        A list of JSON representations of resources with their next execution times.
+    """
+    service_name = event["service"]
+    selectors = event["input"].get("selectors", None)
+    payload = []
 
-    elif service == "documentdb":
-        return DocumentDB().list_resources(action=action, selector=selector)
+    service = ServiceFactory(service_name, Action(event["action"]))
 
-    elif service == "rds":
-        return RDS().list_resources(action=action, selector=selector)
+    resources = service.list_resources()
 
-    elif service == "lambda":
-        return Lambda().list_resources(action=action, selector=selector)
+    for resource in resources:
+        if resource.enabled:
+            if selectors:
+                resource.get_next_execution_time_manual(selectors=selectors)
+            else:
+                resource.get_next_execution_time_auto()
 
-    elif service == "ec2":
-        return EC2().list_resources(action=action, selector=selector)
+            if resource.next_execution_time:
+                logger.info(f"Next {service.action.value} time for {resource.id} is {resource.next_execution_time}")
+                payload.append(resource)
+            else:
+                logger.info(f"No {service.action.value} time for {resource.id}")
 
-    elif service == "apprunner":
-        return AppRunner().list_resources(action=action, selector=selector)
-
-    else:
-        raise Exception(f"Service {service} is not supported")
+    return [resource.to_json() for resource in sorted(payload) if resource.next_execution_time]

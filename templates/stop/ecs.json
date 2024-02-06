@@ -1,0 +1,157 @@
+{
+  "StartAt": "ListResourcesECS",
+  "States": {
+    "ListResourcesECS": {
+      "Next": "ResourceMapECS",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "ecs"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapECS": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitECS",
+        "States": {
+          "CheckAlreadyStoppedECS": {
+            "Choices": [
+              {
+                "Next": "ErrorCatcherECS",
+                "StringEquals": "0",
+                "Variable": "$.autoscaling.desiredCount"
+              }
+            ],
+            "Default": "StoreDesiredCountECS",
+            "Type": "Choice"
+          },
+          "ErrorCatcherECS": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "GetDesiredCountECS": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "Next": "CheckAlreadyStoppedECS",
+            "Parameters": {
+              "Cluster.$": "$.attributes.cluster",
+              "Services.$": "States.Array($.attributes.service)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ecs:describeServices",
+            "ResultPath": "$.autoscaling",
+            "ResultSelector": {
+              "desiredCount.$": "States.JsonToString($.Services[0].DesiredCount)"
+            },
+            "Type": "Task"
+          },
+          "StoreDesiredCountECS": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "Next": "UpdateECS",
+            "Parameters": {
+              "ExpressionAttributeValues": {
+                ":autoscaling": {
+                  "M.$": "$.autoscaling"
+                },
+                ":resourceTtl": {
+                  "N.$": "$.ttl"
+                }
+              },
+              "Key": {
+                "id": {
+                  "S.$": "$.id"
+                }
+              },
+              "TableName": "${dynamodb_table_name}",
+              "UpdateExpression": "SET autoscaling = :autoscaling, resourceTtl = :resourceTtl"
+            },
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "ResultPath": "$.autoscaling",
+            "ResultSelector": {
+              "desiredCount": "0"
+            },
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "UpdateECS": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherECS"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "Cluster.$": "$.attributes.cluster",
+              "DesiredCount.$": "States.StringToJson($.autoscaling.desiredCount)",
+              "Service.$": "$.attributes.service"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ecs:updateService",
+            "ResultPath": null,
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "ECS.ServiceNotFoundException",
+                  "ECS.ClusterNotFoundException"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 3
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitECS": {
+            "Next": "GetDesiredCountECS",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

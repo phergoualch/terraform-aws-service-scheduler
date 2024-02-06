@@ -1,65 +1,45 @@
-import os
-from datetime import datetime
+import logging
+from typing import Dict, List
 
-import boto3
-from tools import get_event_timestamp
+from models import Resource, Tag, Service
+from models.enums import Action
 
 
-class EC2:
-    def __init__(self):
-        self.ec2_client = boto3.client("ec2")
+logger = logging.getLogger(__name__)
 
-    def list_resources(self, action: str, selector: str):
+
+class EC2(Service):
+    def __init__(self, action: Action, parameters: Dict = None):
+        super().__init__("ec2", action, parameters)
+
+    def list_resources(self) -> List[Resource]:
         """
-        Get all EC2 without autoscaling in the account and return them as a list
-
-        Parameters
-        ----------
-        action : str
-            The action of the event (start or stop)
-        selector : str
-            The tags selector in case of manual action
+        Get all EC2 instances in the account and return them as a list of Resource objects.
 
         Returns
         -------
-        resources : List[Dict]
+        resources : List[Resource]
         """
-        payload = []
-        params = {}
+        resources = []
+        paginator = self.client.get_paginator("describe_instances")
 
-        print(">> Listing EC2 instances")
+        logger.info("Listing EC2 instances")
 
-        while params.get("nextToken") != "":
-            describe_response = self.ec2_client.describe_instances(
-                Filters=[{"Name": "tag:finops:enabled", "Values": ["true"]}], **params
-            )
-
-            if len(describe_response["Reservations"]) != 0:
-                for r in describe_response["Reservations"]:
-                    for instance in r["Instances"]:
-                        instance_event_time = get_event_timestamp(
-                            [{"key": tag["Key"], "value": tag["Value"]} for tag in instance["Tags"]], action, selector
-                        )
-
-                        resource_details = {
-                            "details": {"instanceID": [instance["InstanceId"]]},
-                            "nextEventTime": instance_event_time,
-                        }
-
-                        if instance_event_time:
-                            print(f">> EC2 instance {instance['InstanceId']} will {action} on {instance_event_time}")
-
-                            payload.append(resource_details)
-
-                        else:
-                            print(
-                                f">> No {action} event for EC2 instance {instance['InstanceId']} in the next {os.environ.get('EXECUTION_INTERVAL')} hours"
+        try:
+            for page in paginator.paginate(Filters=[{"Name": f"tag:{self.get_tag_key('enabled')}", "Values": ["true"]}]):
+                for reservation in page["Reservations"]:
+                    for instance in reservation["Instances"]:
+                        if instance["State"]["Name"] != "terminated":
+                            resources.append(
+                                Resource(
+                                    id_=instance["InstanceId"],
+                                    service=self,
+                                    tags=[Tag(tag["Key"], tag["Value"]) for tag in instance["Tags"]],
+                                )
                             )
+            logger.info(f"Found {len(resources)} EC2 instances")
+            return resources
 
-                params["nextToken"] = describe_response.get("nextToken", "")
-            else:
-                break
-
-        payload = sorted(payload, key=lambda x: x["nextEventTime"])
-
-        return payload
+        except Exception as e:
+            logger.error(f"Error listing EC2 instances: {e}")
+            raise e

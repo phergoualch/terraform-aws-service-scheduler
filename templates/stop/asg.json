@@ -1,0 +1,155 @@
+{
+  "StartAt": "ListResourcesASG",
+  "States": {
+    "ListResourcesASG": {
+      "Next": "ResourceMapASG",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "asg"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapASG": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitASG",
+        "States": {
+          "CheckAlreadyStoppedASG": {
+            "Choices": [
+              {
+                "And": [
+                  {
+                    "StringEquals": "0",
+                    "Variable": "$.autoscaling.minSize"
+                  },
+                  {
+                    "StringEquals": "0",
+                    "Variable": "$.autoscaling.maxSize"
+                  }
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "Default": "StoreDesiredCountASG",
+            "Type": "Choice"
+          },
+          "ErrorCatcherASG": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "GetDesiredCountASG": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "Next": "CheckAlreadyStoppedASG",
+            "Parameters": {
+              "AutoScalingGroupNames.$": "States.Array($.attributes.name)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:autoscaling:describeAutoScalingGroups",
+            "ResultPath": "$.autoscaling",
+            "ResultSelector": {
+              "maxSize.$": "States.JsonToString($.AutoScalingGroups[0].MaxSize)",
+              "minSize.$": "States.JsonToString($.AutoScalingGroups[0].MinSize)"
+            },
+            "Type": "Task"
+          },
+          "StoreDesiredCountASG": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "Next": "UpdateASG",
+            "Parameters": {
+              "ExpressionAttributeValues": {
+                ":autoscaling": {
+                  "M.$": "$.autoscaling"
+                },
+                ":resourceTtl": {
+                  "N.$": "$.ttl"
+                }
+              },
+              "Key": {
+                "id": {
+                  "S.$": "$.id"
+                }
+              },
+              "TableName": "${dynamodb_table_name}",
+              "UpdateExpression": "SET autoscaling = :autoscaling, resourceTtl = :resourceTtl"
+            },
+            "Resource": "arn:aws:states:::dynamodb:updateItem",
+            "ResultPath": "$.autoscaling",
+            "ResultSelector": {
+              "maxSize": "0",
+              "minSize": "0"
+            },
+            "Type": "Task"
+          },
+          "UpdateASG": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherASG"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "AutoScalingGroupName.$": "$.attributes.name",
+              "MaxSize.$": "States.StringToJson($.autoscaling.maxSize)",
+              "MinSize.$": "States.StringToJson($.autoscaling.minSize)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:autoscaling:updateAutoScalingGroup",
+            "ResultPath": null,
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitASG": {
+            "Next": "GetDesiredCountASG",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}
