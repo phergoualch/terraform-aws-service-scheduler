@@ -1,0 +1,55 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    - id: no-commit-to-branch
+      args: ['--branch', 'main']
+    - id: check-yaml
+      exclude: mkdocs.yml
+    - id: check-ast
+    - id: check-docstring-first
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+    - id: mixed-line-ending
+      args: ['--fix=lf']
+    - id: pretty-format-json
+      exclude: templates/main.json
+      args:
+        - --autofix
+    - id: check-added-large-files
+    - id: check-merge-conflict
+    - id: trailing-whitespace
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+    - id: black
+      language_version: python3.10
+      args: ['--line-length', '140']
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.85.0
+    hooks:
+      - id: terraform_fmt
+        args:
+        - --args=-recursive
+      - id: terraform_checkov
+        args:
+          - --args=--quiet
+      - id: terraform_tflint
+        args:
+          - '--args=--recursive'
+          - '--args=--only=terraform_deprecated_interpolation'
+          - '--args=--only=terraform_deprecated_index'
+          - '--args=--only=terraform_unused_declarations'
+          - '--args=--only=terraform_unused_required_providers'
+          - '--args=--only=terraform_comment_syntax'
+          - '--args=--only=terraform_documented_outputs'
+          - '--args=--only=terraform_documented_variables'
+          - '--args=--only=terraform_typed_variables'
+          - '--args=--only=terraform_module_pinned_source'
+          - '--args=--only=terraform_naming_convention'
+          - '--args=--only=terraform_required_version'
+          - '--args=--only=terraform_required_providers'
+          - '--args=--only=terraform_workspace_remote'
+ci:
+  autofix_prs: false
+  autoupdate_schedule: monthly
