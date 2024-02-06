@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesDocumentDB",
+  "States": {
+    "ListResourcesDocumentDB": {
+      "Next": "ResourceMapDocumentDB",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "documentdb"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapDocumentDB": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitDocumentDB",
+        "States": {
+          "ErrorCatcherDocumentDB": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StopClusterDocumentDB": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherDocumentDB"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "DbClusterIdentifier.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:docdb:stopDBCluster",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitDocumentDB": {
+            "Next": "StopClusterDocumentDB",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "StartAt": "ListResourcesLambda",
+  "States": {
+    "ListResourcesLambda": {
+      "Next": "ResourceMapLambda",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "lambda"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapLambda": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitLambda",
+        "States": {
+          "ErrorCatcherLambda": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StopLambda": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherLambda"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "FunctionName.$": "$.attributes.name",
+              "ReservedConcurrentExecutions.$": "States.StringToJson('0')"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:lambda:putFunctionConcurrency",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitLambda": {
+            "Next": "StopLambda",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

@@ -8,45 +8,45 @@ from models.enums import Action
 logger = logging.getLogger(__name__)
 
 
-class RDS(Service):
+class Aurora(Service):
     def __init__(self, action: Action, parameters: Dict = None):
         super().__init__("rds", action, parameters)
 
     def list_resources(self) -> List[Resource]:
         """
-        Get all RDS instances in the account and return them as a list of Resource objects.
+        Get all Aurora clusters in the account and return them as a list of Resource objects.
 
         Returns
         -------
         resources : List[Resource]
         """
         resources = []
-        paginator = self.client.get_paginator("describe_db_instances")
+        paginator = self.client.get_paginator("describe_db_clusters")
 
         logger.info("Listing RDS instances")
 
         try:
             for page in paginator.paginate():
-                for instance in page["DBInstances"]:
+                for cluster in page["DBClusters"]:
                     try:
-                        tags = self.client.list_tags_for_resource(ResourceName=instance["DBInstanceArn"])
+                        tags = self.client.list_tags_for_resource(ResourceName=cluster["DBClusterArn"])
                     except Exception as e:
-                        logger.warning(f"Error listing tags for RDS instance {instance['DBInstanceArn']}: {e}")
+                        logger.warning(f"Error listing tags for Aurora cluster {cluster['DBClusterArn']}: {e}")
                         continue
 
                     resources.append(
                         Resource(
-                            id_=instance["DBInstanceArn"],
+                            id_=cluster["DBClusterArn"],
                             service=self,
                             tags=[Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]],
-                            attributes={"name": instance["DBInstanceIdentifier"]},
+                            attributes={"name": cluster["DBClusterIdentifier"]},
                         )
                     )
 
-            logger.info(f"Found {len(resources)} RDS instances")
+            logger.info(f"Found {len(resources)} Aurora clusters")
 
         except Exception as e:
-            logger.error(f"Error listing RDS instances: {e}")
+            logger.error(f"Error listing Aurora clusters: {e}")
             raise e
 
         return resources

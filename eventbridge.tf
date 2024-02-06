@@ -1,22 +1,19 @@
 resource "aws_cloudwatch_event_rule" "this" {
-  name                = local.full_deployment_name
-  description         = "Trigger ${local.full_deployment_name} state machines"
+  name                = var.app_name
+  description         = "Trigger ${var.app_name} state machines every ${var.execution_interval} hours"
   schedule_expression = "rate(${var.execution_interval} hours)"
 }
 
 resource "aws_cloudwatch_event_target" "main" {
-  for_each  = toset(["start", "stop"])
-  target_id = aws_sfn_state_machine.main[each.key].name
+  for_each  = aws_sfn_state_machine.main
+  target_id = each.value.name
   rule      = aws_cloudwatch_event_rule.this.name
-  arn       = aws_sfn_state_machine.main[each.key].arn
+  arn       = each.value.arn
   role_arn  = aws_iam_role.eventbridge.arn
-  input = jsonencode({
-    "action" = each.key
-  })
 }
 
 resource "aws_iam_role" "eventbridge" {
-  name = "${local.full_deployment_name}-eventbridge"
+  name = var.deploy_multiple_regions ? "${var.app_name}-eventbridge-${local.region_short_name}" : "${var.app_name}-eventbridge"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -26,7 +23,7 @@ resource "aws_iam_role" "eventbridge" {
         Principal = {
           Service = "events.amazonaws.com"
         }
-      },
+      }
     ]
   })
 
@@ -36,12 +33,10 @@ resource "aws_iam_role" "eventbridge" {
       Version = "2012-10-17"
       Statement = [
         {
-          Action = [
-            "states:StartExecution",
-          ]
+          Action   = "states:StartExecution"
           Effect   = "Allow"
           Resource = [for state_machine in aws_sfn_state_machine.main : state_machine.arn]
-        },
+        }
       ]
     })
   }

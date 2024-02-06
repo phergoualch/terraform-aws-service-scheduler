@@ -1,62 +1,50 @@
-import os
+import logging
+from typing import Dict, List
 
-import boto3
-from tools import get_event_timestamp
+from models import Resource, Tag, Service
+from models.enums import Action
+
+logger = logging.getLogger(__name__)
 
 
-class Lambda:
-    def __init__(self):
-        self.lambda_client = boto3.client("lambda")
+class Lambda(Service):
+    def __init__(self, action: Action, parameters: Dict = None):
+        super().__init__("lambda", action, parameters)
 
-    def list_resources(self, action: str, selector: str):
+    def list_resources(self) -> List[Resource]:
         """
-        Get all Lambda functions in the account and return them as a list
-
-        Parameters
-        ----------
-        action : str
-            The action of the event (start or stop)
-        selector : str
-            The tags selector in case of manual action
+        Get all Lambda functions in the account and return them as a list of Resource objects.
 
         Returns
         -------
-        resources : List[Dict]
+        resources : List[Resource]
         """
-        payload = []
-        params = {}
+        resources = []
+        paginator = self.client.get_paginator("list_functions")
 
-        print(">> Listing Lambda functions")
+        logger.info("Listing Lambda functions")
 
-        while params.get("Marker") != "":
-            describe_response = self.lambda_client.list_functions(**params)
+        try:
+            for page in paginator.paginate():
+                for function in page["Functions"]:
+                    try:
+                        tags = self.client.list_tags(Resource=function["FunctionArn"])
+                    except Exception as e:
+                        logger.warning(f"Error listing tags for Lambda function {function['FunctionArn']}: {e}")
+                        continue
 
-            if len(describe_response["Functions"]) != 0:
-                for function in describe_response["Functions"]:
-                    tags = self.lambda_client.list_tags(Resource=function["FunctionArn"])
-
-                    function_event_time = get_event_timestamp(
-                        [{"key": tag, "value": tags["Tags"][tag]} for tag in tags["Tags"]], action, selector
+                    resources.append(
+                        Resource(
+                            id_=function["FunctionArn"],
+                            service=self,
+                            tags=[Tag(tag, tags["Tags"][tag]) for tag in tags["Tags"]],
+                            attributes={"name": function["FunctionName"]},
+                        )
                     )
 
-                    resource_details = {
-                        "resourceArn": function["FunctionArn"],
-                        "details": {"functionName": function["FunctionName"]},
-                        "nextEventTime": function_event_time,
-                    }
+            logger.info(f"Found {len(resources)} Lambda functions")
+            return resources
 
-                    if function_event_time:
-                        print(f">> Lambda function {function['FunctionName']} will {action} on {function_event_time}")
-
-                        payload.append(resource_details)
-                    else:
-                        print(
-                            f">> No {action} event for Lambda function {function['FunctionName']} in the next {os.environ.get('EXECUTION_INTERVAL')} hours"
-                        )
-                params["Marker"] = describe_response.get("NextMarker", "")
-            else:
-                break
-
-        payload = sorted(payload, key=lambda x: x["nextEventTime"])
-
-        return payload
+        except Exception as e:
+            logger.error(f"Error listing Lambda functions: {e}")
+            raise e

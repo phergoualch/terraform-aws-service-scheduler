@@ -1,35 +1,55 @@
 data "aws_region" "current" {}
 
+locals {
+  region            = data.aws_region.current.name
+  region_short_name = format("%s%s%s", split("-", local.region)[0], substr(split("-", local.region)[1], 0, 1), split("-", local.region)[2])
+}
+
 data "aws_caller_identity" "current" {}
 
 resource "aws_ssm_document" "manual" {
-  name            = "${local.full_deployment_name}-manual"
+  name            = "${var.app_name}-manual"
   document_type   = "Automation"
-  document_format = "YAML"
+  document_format = "JSON"
 
-  content = <<DOC
-description: ''
-schemaVersion: '0.3'
-parameters:
-  action:
-     type: String
-     allowedValues:
-       - start
-       - stop
-     description: "The action to execute, either start or stop"
-  selector:
-    type: String
-    default: "all"
-    description: "The tags to select the resources, in a key=value format, default to all"
-  services:
-    type: String
-    default: "all"
-    description: "The services to execute the action on, default to all"
-mainSteps:
- - name: InvokeStateMachine
-   action: aws:executeStateMachine
-   inputs:
-     stateMachineArn: arn:aws:states:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stateMachine:service-scheduler-{{ action }}
-     input: '{"selector": "{{ selector }}", "action": "{{ action }}", "services": "{{ services }}"}'
-DOC
+  content = jsonencode({
+    "description" : "Manually invoke the service scheduler",
+    "schemaVersion" : "0.3",
+    "parameters" : {
+      "tags" : {
+        "type" : "String",
+        "default" : "all",
+        "description" : "The tags to select the resources, in a key=value format, default to all"
+      },
+      "services" : {
+        "type" : "String",
+        "default" : "all",
+        "description" : "The services to execute the action on, default to all"
+      },
+      "delay" : {
+        "type" : "String",
+        "default" : "0",
+        "description" : "The delay in minutes before starting the action"
+      },
+      "action" : {
+        "type" : "String",
+        "allowedValues" : [
+          "start",
+          "stop"
+        ],
+        "description" : "The action to execute, either start or stop"
+      }
+    },
+    "mainSteps" : [
+      {
+        "name" : "InvokeStateMachine",
+        "action" : "aws:executeStateMachine",
+        "isEnd" : true,
+        "inputs" : {
+          "input" : "{\"selectors\": [{\"tags\": \"{{ tags }}\", \"services\": \"{{ services }}\", \"delay\": {{ delay }} }]}",
+          "stateMachineArn" : "arn:aws:states:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.app_name}-{{ action }}"
+        }
+      }
+    ]
+  })
 }

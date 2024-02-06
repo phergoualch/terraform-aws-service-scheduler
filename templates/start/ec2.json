@@ -1,0 +1,80 @@
+{
+  "StartAt": "ListResourcesEC2",
+  "States": {
+    "ListResourcesEC2": {
+      "Next": "ResourceMapEC2",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "ec2"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapEC2": {
+      "End": true,
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "WaitEC2",
+        "States": {
+          "ErrorCatcherEC2": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StartInstanceEC2": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherEC2"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "InstanceIds.$": "States.Array($.id)"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:ec2:startInstances",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitEC2": {
+            "Next": "StartInstanceEC2",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Type": "Map"
+    }
+  }
+}

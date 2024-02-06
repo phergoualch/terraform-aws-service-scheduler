@@ -1,64 +1,53 @@
-import os
-from datetime import datetime
+import logging
+from typing import Dict, List
 
-import boto3
-from tools import get_event_timestamp
+from models import Resource, Tag, Service
+from models.enums import Action
+
+logger = logging.getLogger(__name__)
 
 
-class AppRunner:
-    def __init__(self):
-        self.apprunner_client = boto3.client("apprunner")
+class AppRunner(Service):
+    def __init__(self, action: Action, parameters: Dict = None):
+        super().__init__("apprunner", action, parameters)
 
-    def list_resources(self, action: str, selector: str):
+    def list_resources(self) -> List[Resource]:
         """
-        Get all AppRunner services in the account and return them as a list
-
-        Parameters
-        ----------
-        action : str
-            The action of the event (start or stop)
-        selector : str
-            The tags selector in case of manual action
+        Get all AppRunner services in the account and return them as a list of Resource objects.
 
         Returns
         -------
-        resources : List[Dict]
+        resources : List[Resource]
         """
-        payload = []
+        resources = []
         params = {}
 
-        print(">> Listing AppRunner services")
+        logger.info("Listing AppRunner services")
 
-        while params.get("NextToken") != "":
-            list_response = self.apprunner_client.list_services(**params)
+        try:
+            while True:
+                response = self.client.list_services(**params)
 
-            if len(list_response["ServiceSummaryList"]) != 0:
-                for service in list_response["ServiceSummaryList"]:
-                    tags_list = self.apprunner_client.list_tags_for_resource(ResourceArn=service["ServiceArn"])["Tags"]
+                for service in response["ServiceSummaryList"]:
+                    try:
+                        tags = self.client.list_tags_for_resource(ResourceArn=service["ServiceArn"])
+                    except Exception as e:
+                        logger.warning(f"Error listing tags for AppRunner service {service['ServiceArn']}: {e}")
+                        continue
 
-                    service_event_time = get_event_timestamp(
-                        [{"key": tag["Key"], "value": tag["Value"]} for tag in tags_list], action, selector
+                    resources.append(
+                        Resource(
+                            id_=service["ServiceArn"], service=self, tags=[Tag(tag["Key"], tag["Value"]) for tag in tags.get("Tags", [])]
+                        )
                     )
 
-                    resource_details = {
-                        "resourceArn": service["ServiceArn"],
-                        "details": {"ServiceId": service["ServiceId"], "ServiceName": service["ServiceName"]},
-                        "nextEventTime": service_event_time,
-                    }
+                params["NextToken"] = response.get("NextToken")
+                if not params["NextToken"]:
+                    break
 
-                    if service_event_time:
-                        print(f">> App Runner {service['ServiceName']} will {action} on {service_event_time}")
+            logger.info(f"Found {len(resources)} AppRunner services")
+            return resources
 
-                        payload.append(resource_details)
-                    else:
-                        print(
-                            f">> No {action} event for App Runner {service['ServiceName']} in the next {os.environ.get('EXECUTION_INTERVAL')} hours"
-                        )
-
-                params["NextToken"] = list_response.get("NextToken", "")
-            else:
-                break
-
-        payload = sorted(payload, key=lambda x: x["nextEventTime"])
-
-        return payload
+        except Exception as e:
+            logger.error(f"Error listing AppRunner services: {e}")
+            raise e

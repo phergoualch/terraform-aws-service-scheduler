@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesAurora",
+  "States": {
+    "ListResourcesAurora": {
+      "Next": "ResourceMapAurora",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "aurora"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapAurora": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitAurora",
+        "States": {
+          "ErrorCatcherAurora": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StopAurora": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherAurora"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "DbClusterIdentifier.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:rds:stopDBCluster",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitAurora": {
+            "Next": "StopAurora",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}
