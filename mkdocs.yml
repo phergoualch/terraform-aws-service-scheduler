@@ -1,0 +1,84 @@
+site_name: AWS Service Scheduler
+site_description: AWS Service Scheduler, a Terraform module to schedule your AWS resources easily.
+site_url: https://scheduler.pereg.cloud/
+theme:
+  name: material
+  logo: img/cloud.svg
+  favicon: img/cloud.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+  - media: '(prefers-color-scheme: light)'
+    scheme: default
+    primary: amber
+    accent: deep purple
+    toggle:
+      icon: material/lightbulb
+      name: Switch to dark mode
+  - media: '(prefers-color-scheme: dark)'
+    scheme: slate
+    primary: amber
+    accent: deep purple
+    toggle:
+      icon: material/lightbulb-outline
+      name: Switch to light mode
+  features:
+  - search.suggest
+  - search.highlight
+  - content.tabs.link
+  - navigation.indexes
+  - content.tooltips
+  - navigation.path
+  - content.code.annotate
+  - content.code.copy
+  - content.code.select
+  - navigation.tabs
+  - navigation.tabs.sticky
+  language: en
+repo_name: aws-service-scheduler
+repo_url: https://github.com/phergoualch/terraform-aws-service-scheduler
+nav:
+  - Introduction: index.md
+  - Usage:
+    - Installation: usage/installation.md
+    - Supported Services: usage/supported-services.md
+    - Available Tags: usage/available-tags.md
+    - Multiple Schedules: usage/multiple-schedules.md
+    - Parameter Store: usage/parameter-store.md
+    - Manual Execution: usage/manual-execution.md
+    - Customization: usage/customization.md
+    - Examples: usage/examples.md
+  - How it works: how-it-works.md
+  - Roadmap: roadmap.md
+  - Changelog: changelog.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - md_in_html
+  - tables
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/phergoualch
+    - icon: fontawesome/brands/linkedin
+      link: https://www.linkedin.com/in/peregher
