@@ -1,10 +1,11 @@
 # AWS Service Scheduler Terraform module
 
+> [!NOTE] 
+> Full documentation can be found here: [scheduler.pereg.cloud](https://scheduler.pereg.cloud/)
+
 The Service Scheduler is an open-source project developed to help scheduling AWS resources, primarily for cost-saving purposes. It is designed to be deployed in multiple accounts and regions, and to be able to start and stop resources based on their tags.
 
 It is based on 2 services, Lambda and Step Function. The architecture is as follows:
-
-Full documentation can be found here: [scheduler.pereg.cloud](https://scheduler.pereg.cloud/)
 
 ![Architecture](https://raw.githubusercontent.com/phergoualch/terraform-aws-service-scheduler/main/docs/img/diagram-background.png)
 
