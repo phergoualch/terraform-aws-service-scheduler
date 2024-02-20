@@ -1,6 +1,6 @@
 # AWS Service Scheduler Terraform module
 
-> [!NOTE] 
+> [!NOTE]
 > Full documentation can be found here: [scheduler.pereg.cloud](https://scheduler.pereg.cloud/)
 
 The Service Scheduler is an open-source project developed to help scheduling AWS resources, primarily for cost-saving purposes. It is designed to be deployed in multiple accounts and regions, and to be able to start and stop resources based on their tags.
@@ -17,7 +17,7 @@ module "service_scheduler" {
   source = "phergoualch/service-scheduler/aws"
   version = ">= 2.0.0"
 
-  enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora]
+  enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora"]
   default_timezone   = "Europe/Paris"
   app_name           = "service-scheduler"
   execution_interval = 6

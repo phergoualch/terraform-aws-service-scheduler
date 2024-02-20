@@ -4,8 +4,8 @@ You can manually start and stop resources on an account. To do this, an SSM auto
 
 To perform the action, you need to go to the System Manager Document console, choose the Owned by you, select the service-scheduler-manual document and then click on Execute Automation. You will then be prompted to enter the parameters as explained below.
 
-> [!NOTE]
-> The service scheduler is account-specific, so if you want to manually start or stop multiple applications deployed on multiple accounts, you'll need to execute automation on each account.
+!!! note
+    The service scheduler is account-specific, so if you want to manually start or stop multiple applications deployed on multiple accounts, you'll need to execute automation on each account.
 
 ### Parameters
 
