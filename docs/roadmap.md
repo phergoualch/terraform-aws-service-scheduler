@@ -22,11 +22,13 @@ Add support for Neptune clusters. The scheduler will be able to start and stop N
 The scheduler currently only allows to stop and start resources. Some AWS services do not support stopping and starting, but support resizing. The scheduler could be extended to support resizing of resources. This would be interesting for cost optimization purposes.
 
 This feature would allow to resize the following services:
+
 * Elaticache
 * Amazon MQ
 * MemoryDB for Redis
 
-It would also allow to resize the following services that can currently be stopped and started:
+And would also allow to resize the following services that can currently be stopped and started:
+
 * RDS
 * DocumentDB
 * Aurora
@@ -39,5 +41,6 @@ Having the CloudFormation support would allow to deploy the scheduler in an orga
 ## Google Cloud Platform support
 
 All features could be ported to Google Cloud Platform. The GCP services could be used with the same logix as AWS
+
 * Cloud Functions in replacement of Lambda
 * Cloud Workflows in replacement of Step Functions
