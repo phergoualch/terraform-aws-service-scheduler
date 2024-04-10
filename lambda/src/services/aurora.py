@@ -23,10 +23,10 @@ class Aurora(Service):
         resources = []
         paginator = self.client.get_paginator("describe_db_clusters")
 
-        logger.info("Listing RDS instances")
+        logger.info("Listing Aurora clusters")
 
         try:
-            for page in paginator.paginate():
+            for page in paginator.paginate(Filters=[{"Name": "engine", "Values": ["aurora-postgresql", "aurora-mysql"]}]):
                 for cluster in page["DBClusters"]:
                     try:
                         tags = self.client.list_tags_for_resource(ResourceName=cluster["DBClusterArn"])
