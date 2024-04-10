@@ -87,10 +87,6 @@ class Resource:
                 if iterator.type == IteratorType.PARAMETER:
                     self.load_tags_from_parameter(iterator=iterator.iterator)
 
-        # Disable the the resource if it does not have a time tag
-        if not any(tag.key == self.service.get_tag_key("time", action=True) for tag in self.tags):
-            self.enabled = False
-
     def __eq__(self, other):
         """
         Compare the resource with another resource for equality.
@@ -261,6 +257,12 @@ class Resource:
         """
         Calculate and set the next scheduled execution time automatically based on resource tags.
         """
+
+        # Disable the resource if it does not have a time tag
+        if not any(tag.key == self.service.get_tag_key("time", action=True) for tag in self.tags):
+            self.enabled = False
+            return
+
         for iterator in self.iterators:
             schedule = self.get_schedule_from_tags(iterator=iterator.iterator)
             next_execution_time = schedule.get_next_execution_time()
