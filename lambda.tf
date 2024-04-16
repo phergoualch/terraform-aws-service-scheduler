@@ -208,6 +208,26 @@ resource "aws_iam_role" "list_resources" {
   }
 
   dynamic "inline_policy" {
+    for_each = contains(var.enabled_services, "elasticache") ? [1] : []
+    content {
+      name = "ElastiCache"
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow",
+            Action = [
+              "elasticache:DescribeCacheClusters",
+              "elasticache:ListTagsForResource",
+            ],
+            Resource = "*",
+          }
+        ]
+      })
+    }
+  }
+
+  dynamic "inline_policy" {
     for_each = contains(var.enabled_services, "lambda") ? [1] : []
     content {
       name = "Lambda"

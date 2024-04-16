@@ -25,7 +25,7 @@ def test_handler_auto():
     assert all([all([key in item for key in ["attributes", "id", "nextExecutionTime"]]) for item in response])
 
 
-@pytest.mark.parametrize("service", ["ec2", "documentdb", "asg", "apprunner", "rds", "aurora", "ecs", "lambda"])
+@pytest.mark.parametrize("service", ["ec2", "documentdb", "asg", "apprunner", "rds", "aurora", "ecs", "lambda", "elasticache"])
 def test_handler_manual(service):
     set_env_vars()
     event = {
@@ -50,7 +50,7 @@ def test_handler_manual(service):
     assert all(times_check)
 
 
-@pytest.mark.parametrize("service", ["ec2", "documentdb", "asg", "apprunner", "rds", "aurora", "ecs", "lambda"])
+@pytest.mark.parametrize("service", ["ec2", "documentdb", "asg", "apprunner", "rds", "aurora", "ecs", "lambda", "elasticache"])
 def test_handler_auto(service):
     set_env_vars()
     event = {

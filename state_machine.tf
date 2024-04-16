@@ -249,6 +249,28 @@ resource "aws_iam_role" "state_machine" {
   }
 
   dynamic "inline_policy" {
+    for_each = contains(var.enabled_services, "elasticache") ? [1] : []
+    content {
+      name = "ElastiCache"
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect   = "Allow",
+            Action   = "elasticache:ModifyCacheCluster",
+            Resource = "*",
+            Condition = {
+              StringEquals = {
+                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
+              }
+            }
+          }
+        ]
+      })
+    }
+  }
+
+  dynamic "inline_policy" {
     for_each = contains(var.enabled_services, "lambda") ? [1] : []
     content {
       name = "Lambda"
