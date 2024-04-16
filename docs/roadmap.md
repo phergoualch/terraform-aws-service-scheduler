@@ -17,30 +17,26 @@ Add support for SageMaker Notebooks. The scheduler will be able to start and sto
 
 Add support for Neptune clusters. The scheduler will be able to start and stop Neptune clusters using the `StopDBCluster` and `StartDBCluster` API calls.
 
-## Resizing support
+### MQ
 
-The scheduler currently only allows to stop and start resources. Some AWS services do not support stopping and starting, but support resizing. The scheduler could be extended to support resizing of resources. This would be interesting for cost optimization purposes.
+Add support for Amazon MQ brokers. The scheduler will be able to restart Amazon MQ brokers using the `ModifyBroker` API call.
 
-This feature would allow to resize the following services:
+### MemoryDB for Redis
 
-* Elaticache
-* Amazon MQ
-* MemoryDB for Redis
+Add support for MemoryDB for Redis clusters. The scheduler will be able to resize MemoryDB for Redis clusters using the `UpdateCluster` API call.
 
-And would also allow to resize the following services that can currently be stopped and started:
+### RDS, Aurora and EC2 resizing
 
-* RDS
-* DocumentDB
-* Aurora
+Add support for resizing RDS, Aurora and EC2 instances. The scheduler will be able to resize RDS, Aurora and EC2 instances using the `ModifyDBInstance`, `ModifyDBCluster` and `ModifyInstance` API calls.
 
-## More Infrastructure as Code support
+## CDK support
 
-The scheduler currently only supports Terraform. It would be interesting to add support for other IaC tools such as CloudFormation and CDK.
-Having the CloudFormation support would allow to deploy the scheduler in an organization using StackSets.
+The scheduler currently only supports Terraform. It would be interesting to add support for other IaC tools such as CDK.
+Having the CDK support would allow to deploy the scheduler in an organization as CloudFormation StackSets.
 
 ## Google Cloud Platform support
 
-All features could be ported to Google Cloud Platform. The GCP services could be used with the same logix as AWS
+All features could be ported to Google Cloud Platform. The GCP services could be used with the same logic as AWS
 
 * Cloud Functions in replacement of Lambda
 * Cloud Workflows in replacement of Step Functions

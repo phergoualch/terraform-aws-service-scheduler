@@ -14,16 +14,7 @@ def service():
         "tags_prefix": "scheduler",
         "tags_mapping": {
             tag: tag
-            for tag in [
-                "enabled",
-                "time",
-                "timezone",
-                "active-days",
-                "active-days-of-month",
-                "active-weeks",
-                "active-months",
-                "parameter",
-            ]
+            for tag in ["enabled", "time", "timezone", "active-days", "active-days-of-month", "active-weeks", "active-months", "parameter"]
         },
         "default_timezone": "UTC",
         "interval": "6",
@@ -61,16 +52,7 @@ def test_service(service):
     assert service.interval == 6
     assert service.tags_mapping == {
         tag: tag
-        for tag in [
-            "enabled",
-            "time",
-            "timezone",
-            "active-days",
-            "active-days-of-month",
-            "active-weeks",
-            "active-months",
-            "parameter",
-        ]
+        for tag in ["enabled", "time", "timezone", "active-days", "active-days-of-month", "active-weeks", "active-months", "parameter"]
     }
 
 
