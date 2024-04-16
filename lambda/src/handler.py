@@ -1,6 +1,6 @@
 import logging
 
-from services import ASG, EC2, AppRunner, DocumentDB, RDS, Aurora, ECS, Lambda
+from services import ASG, EC2, AppRunner, DocumentDB, RDS, Aurora, ECS, Lambda, Elasticache
 from models import Service
 from models.enums import Action
 
@@ -33,6 +33,7 @@ def ServiceFactory(service: str, action: Action) -> Service:
         "aurora": Aurora,
         "ecs": ECS,
         "lambda": Lambda,
+        "elasticache": Elasticache,
     }
 
     return services[service](action)

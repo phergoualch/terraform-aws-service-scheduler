@@ -55,6 +55,7 @@ class Service:
         self.now = datetime.now(tz=tz.gettz("UTC"))
 
         self.ssm = boto3.client("ssm")
+        self.sts = boto3.client("sts")
 
         if parameters:
             self.tags_prefix = parameters.get("tags_prefix")
