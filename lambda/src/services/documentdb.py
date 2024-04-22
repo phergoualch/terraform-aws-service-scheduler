@@ -42,7 +42,7 @@ class DocumentDB(Service):
                         Resource(
                             id_=cluster["DBClusterArn"],
                             service=self,
-                            tags=[Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]],
+                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
                             attributes={"name": cluster["DBClusterIdentifier"]},
                         )
                     )

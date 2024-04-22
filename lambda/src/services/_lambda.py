@@ -39,7 +39,7 @@ class Lambda(Service):
                         Resource(
                             id_=function["FunctionArn"],
                             service=self,
-                            tags=[Tag(tag, tags["Tags"][tag]) for tag in tags["Tags"]],
+                            tags=set([Tag(tag, tags["Tags"][tag]) for tag in tags["Tags"]]),
                             attributes={"name": function["FunctionName"]},
                         )
                     )

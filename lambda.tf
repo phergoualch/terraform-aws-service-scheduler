@@ -24,10 +24,12 @@ resource "aws_lambda_function" "list_resources" {
 
   environment {
     variables = {
-      DEFAULT_TIMEZONE   = var.default_timezone
-      EXECUTION_INTERVAL = var.execution_interval
-      TAGS_MAPPING       = jsonencode(var.tags_mapping)
-      TAGS_PREFIX        = var.tags_prefix
+      DEFAULT_TIMEZONE      = var.default_timezone
+      EXECUTION_INTERVAL    = var.execution_interval
+      TAGS_MAPPING          = jsonencode(var.tags_mapping)
+      TAGS_PREFIX           = var.tags_prefix
+      SCHEDULE_WITHOUT_TAGS = jsonencode(var.schedule_without_tags)
+      DEFAULT_SCHEDULE      = jsonencode(var.default_schedule)
     }
   }
 

@@ -62,9 +62,20 @@ class Tag:
         Returns
         -------
         bool
-            True if the tags are equal, False otherwise.
+            True if the tags key are equal, False otherwise.
         """
-        return self.__dict__ == other.__dict__
+        return self.key == other.key
+
+    def __hash__(self):
+        """
+        Return the hash value of the tag.
+
+        Returns
+        -------
+        int
+            The hash value of the tag.
+        """
+        return hash(str(self.key))
 
     def __repr__(self):
         """

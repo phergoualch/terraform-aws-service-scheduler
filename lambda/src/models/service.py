@@ -30,7 +30,13 @@ class Service:
         Get the tag key from the tag mapping.
     """
 
-    def __init__(self, name: str, action: Action, parameters: Dict = None, client_name: str = None):
+    def __init__(
+        self,
+        name: str,
+        action: Action,
+        parameters: Dict = None,
+        client_name: str = None,
+    ):
         """
         Initialize a Service instance.
 
@@ -61,11 +67,15 @@ class Service:
             self.tags_mapping = parameters.get("tags_mapping")
             self.interval = int(parameters.get("interval"))
             self.default_timezone = parameters.get("default_timezone")
+            self.schedule_without_tags = parameters.get("schedule_without_tags", False)
+            self.default_schedule = parameters.get("default_schedule", {})
         else:
             self.tags_prefix = os.environ.get("TAGS_PREFIX")
             self.tags_mapping = json.loads(os.environ.get("TAGS_MAPPING"))
             self.interval = int(os.environ.get("EXECUTION_INTERVAL"))
             self.default_timezone = os.environ.get("DEFAULT_TIMEZONE")
+            self.schedule_without_tags = json.loads(os.environ.get("SCHEDULE_WITHOUT_TAGS"))
+            self.default_schedule = json.loads(os.environ.get("DEFAULT_SCHEDULE"))
 
     def __repr__(self):
         """

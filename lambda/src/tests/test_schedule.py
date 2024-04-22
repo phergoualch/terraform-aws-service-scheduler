@@ -13,15 +13,17 @@ from tests.test_global import service
 @pytest.fixture
 def resource(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("scheduler:start-time", "10:00"),
-            Tag("scheduler:timezone", "UTC"),
-            Tag("app", "test"),
-        ],
-        {"id": "id"},
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "10:00"),
+                Tag("scheduler:timezone", "UTC"),
+                Tag("app", "test"),
+            ]
+        ),
+        attributes={"id": "id"},
     )
     return resource
 
@@ -66,14 +68,16 @@ def test_get_next_execution_time(resource):
 
 def test_get_next_execution_time_next_day(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("scheduler:start-time", "03:00"),
-            Tag("scheduler:timezone", "UTC"),
-            Tag("scheduler:active-days", "WED-FRI, SAT"),
-        ],
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "03:00"),
+                Tag("scheduler:timezone", "UTC"),
+                Tag("scheduler:active-days", "WED-FRI, SAT"),
+            ]
+        ),
     )
     resource.service.now = datetime(2024, 1, 26, 22, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
@@ -87,16 +91,18 @@ def test_get_next_execution_time_next_day(service):
 
 def test_iterators(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("scheduler:start-time", "09:00"),
-            Tag("scheduler:active-days", "MON-FRI"),
-            Tag("scheduler:start-time:1", "13:00"),
-            Tag("scheduler:active-days:1", "SAT-SUN"),
-            Tag("scheduler:parameter:2", "test"),
-        ],
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "09:00"),
+                Tag("scheduler:active-days", "MON-FRI"),
+                Tag("scheduler:start-time:1", "13:00"),
+                Tag("scheduler:active-days:1", "SAT-SUN"),
+                Tag("scheduler:parameter:2", "test"),
+            ]
+        ),
     )
     assert resource.iterators == [
         Iterator(iterator=None, type=IteratorType.TAG),
@@ -107,16 +113,18 @@ def test_iterators(service):
 
 def test_schedules_iterators(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("scheduler:start-time", "09:00"),
-            Tag("scheduler:active-days", "MON-FRI"),
-            Tag("scheduler:active-months", "JAN-DEC"),
-            Tag("scheduler:start-time:1", "13:00"),
-            Tag("scheduler:active-days:1", "SAT-SUN"),
-        ],
+        id_="arn",
+        service=service,
+        tags=(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "09:00"),
+                Tag("scheduler:active-days", "MON-FRI"),
+                Tag("scheduler:active-months", "JAN-DEC"),
+                Tag("scheduler:start-time:1", "13:00"),
+                Tag("scheduler:active-days:1", "SAT-SUN"),
+            ]
+        ),
     )
     schedules = []
     for iterator in resource.iterators:
