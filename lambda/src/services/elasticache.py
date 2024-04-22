@@ -49,7 +49,7 @@ class Elasticache(Service):
                         Resource(
                             id_=cluster_arn,
                             service=self,
-                            tags=[Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]],
+                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
                             attributes={
                                 "id": cluster["CacheClusterId"],
                                 "nodeType": target_node_type,

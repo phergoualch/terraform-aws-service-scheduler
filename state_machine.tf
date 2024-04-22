@@ -17,6 +17,22 @@ resource "aws_sfn_state_machine" "main" {
   })
 }
 
+locals {
+  scheduler_is_true_condition = {
+    StringEquals = {
+      "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
+    }
+  }
+
+  scheduler_is_not_false_condition = {
+    StringNotEquals = {
+      "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "false"
+    }
+  }
+
+  scheduler_condition = var.schedule_without_tags ? local.scheduler_is_not_false_condition : local.scheduler_is_true_condition
+}
+
 resource "aws_iam_role" "state_machine" {
   name = var.deploy_multiple_regions ? "${var.app_name}-state-machine-${local.region_short_name}" : "${var.app_name}-state-machine"
   assume_role_policy = jsonencode({
@@ -81,13 +97,9 @@ resource "aws_iam_role" "state_machine" {
               "ec2:StartInstances",
               "ec2:StopInstances"
             ],
-            Effect   = "Allow",
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Effect    = "Allow",
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -107,14 +119,10 @@ resource "aws_iam_role" "state_machine" {
             Resource = "*",
           },
           {
-            Effect   = "Allow",
-            Action   = "ecs:UpdateService",
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Effect    = "Allow",
+            Action    = "ecs:UpdateService",
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -134,14 +142,10 @@ resource "aws_iam_role" "state_machine" {
             Resource = "*",
           },
           {
-            Effect   = "Allow",
-            Action   = "autoscaling:UpdateAutoScalingGroup"
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Effect    = "Allow",
+            Action    = "autoscaling:UpdateAutoScalingGroup"
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -161,12 +165,8 @@ resource "aws_iam_role" "state_machine" {
               "apprunner:PauseService",
               "apprunner:ResumeService"
             ],
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -186,12 +186,8 @@ resource "aws_iam_role" "state_machine" {
               "rds:StartDBInstance",
               "rds:StopDBInstance"
             ],
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -211,12 +207,8 @@ resource "aws_iam_role" "state_machine" {
               "rds:StartDBCluster",
               "rds:StopDBCluster"
             ],
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -236,12 +228,8 @@ resource "aws_iam_role" "state_machine" {
               "rds:StartDBCluster",
               "rds:StopDBCluster",
             ],
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -256,14 +244,10 @@ resource "aws_iam_role" "state_machine" {
         Version = "2012-10-17"
         Statement = [
           {
-            Effect   = "Allow",
-            Action   = "elasticache:ModifyCacheCluster",
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Effect    = "Allow",
+            Action    = "elasticache:ModifyCacheCluster",
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })
@@ -283,12 +267,8 @@ resource "aws_iam_role" "state_machine" {
               "lambda:DeleteFunctionConcurrency",
               "lambda:PutFunctionConcurrency",
             ],
-            Resource = "*",
-            Condition = {
-              StringEquals = {
-                "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-              }
-            }
+            Resource  = "*",
+            Condition = local.scheduler_condition
           }
         ]
       })

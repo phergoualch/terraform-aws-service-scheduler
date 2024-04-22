@@ -43,7 +43,9 @@ class ECS(Service):
                                 Resource(
                                     id_=service_arn,
                                     service=self,
-                                    tags=[Tag(tag["key"], tag["value"]) for tag in tags["tags"]],
+                                    tags=set(
+                                        [Tag(tag["key"], tag["value"]) for tag in tags["tags"]]
+                                    ),
                                     attributes={
                                         "cluster": cluster_arn.split("/")[-1],
                                         "service": service_arn.split("/")[-1],

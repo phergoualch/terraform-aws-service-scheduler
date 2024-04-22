@@ -41,7 +41,9 @@ class AppRunner(Service):
                         Resource(
                             id_=service["ServiceArn"],
                             service=self,
-                            tags=[Tag(tag["Key"], tag["Value"]) for tag in tags.get("Tags", [])],
+                            tags=set(
+                                [Tag(tag["Key"], tag["Value"]) for tag in tags.get("Tags", [])]
+                            ),
                         )
                     )
 

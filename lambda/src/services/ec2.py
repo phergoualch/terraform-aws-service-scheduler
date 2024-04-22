@@ -26,9 +26,7 @@ class EC2(Service):
         logger.info("Listing EC2 instances")
 
         try:
-            for page in paginator.paginate(
-                Filters=[{"Name": f"tag:{self.get_tag_key('enabled')}", "Values": ["true"]}]
-            ):
+            for page in paginator.paginate():
                 for reservation in page["Reservations"]:
                     for instance in reservation["Instances"]:
                         if instance["State"]["Name"] != "terminated":
@@ -36,9 +34,9 @@ class EC2(Service):
                                 Resource(
                                     id_=instance["InstanceId"],
                                     service=self,
-                                    tags=[
-                                        Tag(tag["Key"], tag["Value"]) for tag in instance["Tags"]
-                                    ],
+                                    tags=set(
+                                        [Tag(tag["Key"], tag["Value"]) for tag in instance["Tags"]]
+                                    ),
                                 )
                             )
             logger.info(f"Found {len(resources)} EC2 instances")

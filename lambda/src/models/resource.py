@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 from datetime import timedelta
 from dateutil import tz
 import json
@@ -22,7 +22,7 @@ class Resource:
         The ID of the resource.
     service : Service
         The associated service.
-    tags : List[Tag]
+    tags : Set[Tag]
         The list of tags associated with the resource.
     attributes : Dict
         Additional attributes.
@@ -55,7 +55,7 @@ class Resource:
         Return a JSON representation of the resource to return to Step Functions.
     """
 
-    def __init__(self, id_: str, service: Service, tags: List[Tag], attributes: Dict = None):
+    def __init__(self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None):
         """
         Initialize a Resource instance.
 
@@ -65,7 +65,7 @@ class Resource:
             The ID of the resource.
         service : Service
             The associated service.
-        tags : List[Tag]
+        tags : Set[Tag]
             The list of tags associated with the resource.
         attributes : Dict, optional
             Additional attributes, by default None.
@@ -238,14 +238,12 @@ class Resource:
 
     def load_tags_from_parameter(self, iterator: int = None):
         """
-                Load the resource tags from the parameter store parameter.
+        Load the resource tags from the parameter store parameter.
 
-                Parameters
-                ----------
-                iterator : int, optional
-                    The iterator to use, by default None
-
-        .
+        Parameters
+        ----------
+        iterator : int, optional
+            The iterator to use, by default None
         """
         parameter_tag = self.service.get_tag_key("parameter", iterator=iterator)
         parameter_name = next((tag.value for tag in self.tags if tag.key == parameter_tag), None)
@@ -274,7 +272,7 @@ class Resource:
                 logger.warning(f"Could not load tag {key} from parameter {parameter_tag}: {e}")
                 continue
 
-        self.tags.extend(parameter_tags)
+        self.tags.update(parameter_tags)
 
     def get_next_execution_time_auto(self):
         """

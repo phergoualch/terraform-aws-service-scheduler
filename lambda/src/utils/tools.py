@@ -1,6 +1,6 @@
 from enum import Enum
 import logging
-from typing import List
+from typing import Set
 
 from models.tag import Tag
 
@@ -55,13 +55,13 @@ def is_in_range(value: str, range_value: str, range_enum: Enum = None):
     return False
 
 
-def check_selector_tags(tags: List[Tag], selector: str) -> bool:
+def check_selector_tags(tags: Set[Tag], selector: str) -> bool:
     """
     Check if the selector tags are present in the resource tags.
 
     Parameters
     ----------
-    tags : List[Tag]
+    tags : Set[Tag]
         List of Tag objects containing key-value pairs.
     selector : str
         Selector string in the format "key1=value1,key2=value2,...".
