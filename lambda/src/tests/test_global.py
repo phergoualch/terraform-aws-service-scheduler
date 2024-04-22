@@ -35,14 +35,16 @@ def service():
 @pytest.fixture
 def resource(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("scheduler:start-time", "10:00"),
-            Tag("scheduler:timezone", "UTC"),
-        ],
-        {"id": "id"},
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "10:00"),
+                Tag("scheduler:timezone", "UTC"),
+            ]
+        ),
+        attributes={"id": "id"},
     )
     return resource
 
@@ -102,14 +104,16 @@ def test_get_tag_key(service):
 @pytest.fixture
 def resource1(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("application", "app1"),
-            Tag("environment", "dev"),
-            Tag("team", "team1"),
-        ],
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("application", "app1"),
+                Tag("environment", "dev"),
+                Tag("team", "team1"),
+            ]
+        ),
     )
     return resource
 
@@ -127,14 +131,16 @@ def test_manual_delay(delay, resource):
 @pytest.fixture
 def resource2(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("application", "app2"),
-            Tag("environment", "prod"),
-            Tag("team", "team1"),
-        ],
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("application", "app2"),
+                Tag("environment", "prod"),
+                Tag("team", "team1"),
+            ]
+        ),
     )
     return resource
 

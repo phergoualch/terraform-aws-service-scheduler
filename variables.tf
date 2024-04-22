@@ -79,3 +79,15 @@ variable "deploy_multiple_regions" {
   type        = bool
   default     = false
 }
+
+variable "default_schedule" {
+  description = "The default schedule to use if no tags are found"
+  type        = map(string)
+  default     = {}
+}
+
+variable "schedule_without_tags" {
+  description = "If true, the resources will be scheduled with the default schedule if no tags are found and the enabled tag is not false"
+  type        = bool
+  default     = false
+}
