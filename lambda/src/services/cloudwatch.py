@@ -31,7 +31,9 @@ class Cloudwatch(Service):
                     try:
                         tags = self.client.list_tags_for_resource(ResourceARN=alarm["AlarmArn"])
                     except Exception as e:
-                        logger.warning(f"Error listing tags for Cloudwatch alarm {alarm['AlarmArn']}: {e}")
+                        logger.warning(
+                            f"Error listing tags for Cloudwatch alarm {alarm['AlarmArn']}: {e}"
+                        )
                         continue
 
                     resources.append(
