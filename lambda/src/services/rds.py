@@ -29,9 +29,13 @@ class RDS(Service):
             for page in paginator.paginate():
                 for instance in page["DBInstances"]:
                     try:
-                        tags = self.client.list_tags_for_resource(ResourceName=instance["DBInstanceArn"])
+                        tags = self.client.list_tags_for_resource(
+                            ResourceName=instance["DBInstanceArn"]
+                        )
                     except Exception as e:
-                        logger.warning(f"Error listing tags for RDS instance {instance['DBInstanceArn']}: {e}")
+                        logger.warning(
+                            f"Error listing tags for RDS instance {instance['DBInstanceArn']}: {e}"
+                        )
                         continue
 
                     resources.append(

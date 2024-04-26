@@ -14,7 +14,16 @@ def service():
         "tags_prefix": "scheduler",
         "tags_mapping": {
             tag: tag
-            for tag in ["enabled", "time", "timezone", "active-days", "active-days-of-month", "active-weeks", "active-months", "parameter"]
+            for tag in [
+                "enabled",
+                "time",
+                "timezone",
+                "active-days",
+                "active-days-of-month",
+                "active-weeks",
+                "active-months",
+                "parameter",
+            ]
         },
         "default_timezone": "UTC",
         "interval": "6",
@@ -52,7 +61,16 @@ def test_service(service):
     assert service.interval == 6
     assert service.tags_mapping == {
         tag: tag
-        for tag in ["enabled", "time", "timezone", "active-days", "active-days-of-month", "active-weeks", "active-months", "parameter"]
+        for tag in [
+            "enabled",
+            "time",
+            "timezone",
+            "active-days",
+            "active-days-of-month",
+            "active-weeks",
+            "active-months",
+            "parameter",
+        ]
     }
 
 
@@ -74,7 +92,10 @@ def test_resource_is_enabled_missing_tag(service):
 def test_get_tag_key(service):
     assert service.get_tag_key("enabled") == "scheduler:enabled"
     assert service.get_tag_key("time", action=True) == "scheduler:start-time"
-    assert service.get_tag_key("active-months", action=True, iterator=3) == "scheduler:start-active-months:3"
+    assert (
+        service.get_tag_key("active-months", action=True, iterator=3)
+        == "scheduler:start-active-months:3"
+    )
     assert service.get_tag_key("active-days", iterator=1) == "scheduler:active-days:1"
 
 
@@ -98,7 +119,9 @@ def test_manual_delay(delay, resource):
     selectors = [{"services": "ec2", "tags": "all", "delay": delay}]
     resource.get_next_execution_time_manual(selectors=selectors)
 
-    assert resource.next_execution_time == (resource.service.now + timedelta(minutes=delay)).replace(microsecond=0, tzinfo=tz.tzlocal())
+    assert resource.next_execution_time == (
+        resource.service.now + timedelta(minutes=delay)
+    ).replace(microsecond=0, tzinfo=tz.tzlocal())
 
 
 @pytest.fixture

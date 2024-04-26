@@ -32,12 +32,16 @@ class AppRunner(Service):
                     try:
                         tags = self.client.list_tags_for_resource(ResourceArn=service["ServiceArn"])
                     except Exception as e:
-                        logger.warning(f"Error listing tags for AppRunner service {service['ServiceArn']}: {e}")
+                        logger.warning(
+                            f"Error listing tags for AppRunner service {service['ServiceArn']}: {e}"
+                        )
                         continue
 
                     resources.append(
                         Resource(
-                            id_=service["ServiceArn"], service=self, tags=[Tag(tag["Key"], tag["Value"]) for tag in tags.get("Tags", [])]
+                            id_=service["ServiceArn"],
+                            service=self,
+                            tags=[Tag(tag["Key"], tag["Value"]) for tag in tags.get("Tags", [])],
                         )
                     )
 

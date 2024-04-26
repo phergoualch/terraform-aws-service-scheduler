@@ -97,7 +97,9 @@ class Service:
             The tag key.
         """
         if action and iterator:
-            return f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}:{iterator}"
+            return (
+                f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}:{iterator}"
+            )
         elif action:
             return f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}"
         elif iterator:

@@ -20,13 +20,13 @@ repos:
     - id: check-merge-conflict
     - id: trailing-whitespace
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.4.2
     hooks:
     - id: black
-      language_version: python3.10
-      args: ['--line-length', '140']
+      language_version: python3.12
+      args: ['--line-length', '100']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.85.0
+    rev: v1.89.1
     hooks:
       - id: terraform_fmt
         args:
