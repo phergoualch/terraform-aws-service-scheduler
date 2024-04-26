@@ -7,11 +7,11 @@ variable "default_timezone" {
 variable "enabled_services" {
   description = "The list of services to enable"
   type        = list(string)
-  default     = ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache"]
+  default     = ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"]
 
   validation {
-    condition     = !contains([for s in var.enabled_services : contains(["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache"], s)], false)
-    error_message = "The list of enabled services must be a subset of [\"ec2\", \"asg\", \"ecs\", \"rds\", \"documentdb\", \"lambda\", \"apprunner\", \"aurora\", \"elasticache\"]"
+    condition     = !contains([for s in var.enabled_services : contains(["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"], s)], false)
+    error_message = "The list of enabled services must be a subset of [\"ec2\", \"asg\", \"ecs\", \"rds\", \"documentdb\", \"lambda\", \"apprunner\", \"aurora\", \"elasticache\", \"cloudwatch\"]"
   }
 }
 

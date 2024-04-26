@@ -294,4 +294,25 @@ resource "aws_iam_role" "state_machine" {
       })
     }
   }
+
+  dynamic "inline_policy" {
+    for_each = contains(var.enabled_services, "cloudwatch") ? [1] : []
+    content {
+      name = "CloudWatch"
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow",
+            Action = [
+              "cloudwatch:EnableAlarmActions",
+              "cloudwatch:DisableAlarmActions",
+            ],
+            Resource  = "*",
+            Condition = local.scheduler_condition
+          }
+        ]
+      })
+    }
+  }
 }

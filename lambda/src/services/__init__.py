@@ -7,3 +7,4 @@ from services.rds import RDS
 from services.aurora import Aurora
 from services._lambda import Lambda
 from services.elasticache import Elasticache
+from services.cloudwatch import Cloudwatch

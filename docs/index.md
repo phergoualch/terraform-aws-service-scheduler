@@ -25,7 +25,7 @@ module "service_scheduler" {
   source = "phergoualch/service-scheduler/aws"
   version = ">= 2.0.0"
 
-  enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache"] #(1)!
+  enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"] #(1)!
   default_timezone   = "Europe/Paris" #(2)!
   app_name           = "service-scheduler" #(3)!
   execution_interval = 6 #(4)!
@@ -50,5 +50,6 @@ module "service_scheduler" {
 - **[App Runner](usage/supported-services.md#app-runner)**
 - **[Aurora](usage/supported-services.md#aurora)**
 - **[ElastiCache (Redis)](usage/supported-services.md#elasticache-redis)**
+- **[Cloudwatch Alarms](usage/supported-services.md#cloudwatch-alarms)**
 
 </div>
