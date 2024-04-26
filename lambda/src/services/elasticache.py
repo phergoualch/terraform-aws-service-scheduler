@@ -35,10 +35,14 @@ class Elasticache(Service):
                         tags = self.client.list_tags_for_resource(ResourceName=cluster_arn)
 
                         target_node_type = [
-                            tag["Value"] for tag in tags["TagList"] if tag["Key"] == self.get_tag_key("node-type", action=self.action)
+                            tag["Value"]
+                            for tag in tags["TagList"]
+                            if tag["Key"] == self.get_tag_key("node-type", action=self.action)
                         ][0]
                     except Exception as e:
-                        logger.warning(f"Error listing tags for Elasticache cluster {cluster['CacheClusterId']}: {e}")
+                        logger.warning(
+                            f"Error listing tags for Elasticache cluster {cluster['CacheClusterId']}: {e}"
+                        )
                         continue
 
                     resources.append(
@@ -46,7 +50,10 @@ class Elasticache(Service):
                             id_=cluster_arn,
                             service=self,
                             tags=[Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]],
-                            attributes={"id": cluster["CacheClusterId"], "nodeType": target_node_type},
+                            attributes={
+                                "id": cluster["CacheClusterId"],
+                                "nodeType": target_node_type,
+                            },
                         )
                     )
             logger.info(f"Found {len(resources)} Elasticache clusters")

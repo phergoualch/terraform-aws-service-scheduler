@@ -34,7 +34,9 @@ class ECS(Service):
                             try:
                                 tags = self.client.list_tags_for_resource(resourceArn=service_arn)
                             except Exception as e:
-                                logger.warning(f"Error listing tags for ECS service {service_arn}: {e}")
+                                logger.warning(
+                                    f"Error listing tags for ECS service {service_arn}: {e}"
+                                )
                                 continue
 
                             resources.append(
