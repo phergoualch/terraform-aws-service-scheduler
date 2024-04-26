@@ -235,8 +235,31 @@ resource "aws_iam_role" "list_resources" {
         Version = "2012-10-17"
         Statement = [
           {
-            Effect   = "Allow",
-            Action   = "lambda:List*",
+            Effect = "Allow",
+            Action = [
+              "lambda:ListFunctions",
+              "lambda:ListTags",
+            ],
+            Resource = "*",
+          }
+        ]
+      })
+    }
+  }
+
+  dynamic "inline_policy" {
+    for_each = contains(var.enabled_services, "cloudwatch") ? [1] : []
+    content {
+      name = "CloudWatch"
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow",
+            Action = [
+              "cloudwatch:DescribeAlarms",
+              "cloudwatch:ListTagsForResource",
+            ],
             Resource = "*",
           }
         ]
