@@ -15,7 +15,6 @@ from services import (
 from models import Service
 from models.enums import Action
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("handler")
 
 
@@ -73,6 +72,8 @@ def handler(event, context):
 
     service = ServiceFactory(service_name, Action(event["action"]))
 
+    logger.info(f"Processing {service.action.value} for {service_name} resources")
+
     resources = service.list_resources()
 
     for resource in resources:
@@ -83,7 +84,9 @@ def handler(event, context):
                 resource.get_next_execution_time_auto()
 
             if resource.next_execution_time:
-                logger.info(f"Next {service.action.value} time for {resource.id} is {resource.next_execution_time}")
+                logger.info(
+                    f"Next {service.action.value} time for {resource.id} is {resource.next_execution_time}"
+                )
                 payload.append(resource)
             else:
                 logger.info(f"No {service.action.value} time for {resource.id}")
