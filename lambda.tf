@@ -31,9 +31,12 @@ resource "aws_lambda_function" "list_resources" {
     }
   }
 
-  depends_on = [
-    aws_cloudwatch_log_group.list_resources
-  ]
+  logging_config {
+    log_format            = "JSON"
+    log_group             = aws_cloudwatch_log_group.list_resources.name
+    system_log_level      = "WARN"
+    application_log_level = "INFO"
+  }
 }
 
 resource "aws_cloudwatch_log_group" "list_resources" {

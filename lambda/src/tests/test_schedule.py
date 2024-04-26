@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import pytest
 from dateutil import tz
 from models import Resource, Tag
-from models.enums import Day, Month, IteratorType
+from models.enums import Day, Month, IteratorType, Action
 from models.iterator import Iterator
 from utils.tools import is_in_range
 
@@ -56,7 +56,9 @@ def test_is_number_in_range():
 def test_get_next_execution_time(resource):
     resource.service.now = datetime(2024, 1, 26, 8, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
-    assert schedule.get_next_execution_time() == datetime(2024, 1, 26, 10, 0, 0, tzinfo=tz.gettz("UTC"))
+    assert schedule.get_next_execution_time() == datetime(
+        2024, 1, 26, 10, 0, 0, tzinfo=tz.gettz("UTC")
+    )
     resource.service.now = datetime(2024, 1, 26, 14, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
     assert schedule.get_next_execution_time() == None
@@ -75,7 +77,9 @@ def test_get_next_execution_time_next_day(service):
     )
     resource.service.now = datetime(2024, 1, 26, 22, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
-    assert schedule.get_next_execution_time() == datetime(2024, 1, 27, 3, 0, 0, tzinfo=tz.gettz("UTC"))
+    assert schedule.get_next_execution_time() == datetime(
+        2024, 1, 27, 3, 0, 0, tzinfo=tz.gettz("UTC")
+    )
     resource.service.now = datetime(2024, 1, 26, 18, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
     assert schedule.get_next_execution_time() == None
@@ -123,3 +127,48 @@ def test_schedules_iterators(service):
     assert schedules[0].active_days == "MON-FRI"
     assert schedules[0].active_months == "JAN-DEC"
     assert schedules[1].active_months == "JAN-DEC"
+
+
+def test_multi_schedule_same_day(service):
+    service.action = Action.STOP
+    resource = Resource(
+        id_="arn",
+        service=service,
+        tags=(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "08:00"),
+                Tag("scheduler:stop-time", "18:00"),
+                Tag("scheduler:start-time:1", "23:00"),
+                Tag("scheduler:stop-time:1", "02:00"),
+                Tag("scheduler:start-active-days-of-month:1", "1"),
+                Tag("scheduler:stop-active-days-of-month:1", "2"),
+            ]
+        ),
+    )
+
+    resource.service.now = datetime(2024, 1, 1, 14, 0, 0, tzinfo=tz.gettz("UTC"))
+    resource.get_next_execution_time_auto()
+
+    assert resource.next_execution_time == datetime(2024, 1, 1, 18, 0, 0, tzinfo=tz.gettz("UTC"))
+
+    resource = Resource(
+        id_="arn",
+        service=service,
+        tags=(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "08:00"),
+                Tag("scheduler:stop-time", "18:00"),
+                Tag("scheduler:start-time:1", "23:00"),
+                Tag("scheduler:stop-time:1", "02:00"),
+                Tag("scheduler:start-active-days-of-month:1", "1"),
+                Tag("scheduler:stop-active-days-of-month:1", "2"),
+            ]
+        ),
+    )
+
+    resource.service.now = datetime(2024, 1, 1, 22, 0, 0, tzinfo=tz.gettz("UTC"))
+    resource.get_next_execution_time_auto()
+
+    assert resource.next_execution_time == datetime(2024, 1, 2, 2, 0, 0, tzinfo=tz.gettz("UTC"))
