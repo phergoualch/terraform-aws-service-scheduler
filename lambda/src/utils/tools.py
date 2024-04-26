@@ -29,7 +29,7 @@ def is_in_range(value: str, range_value: str, range_enum: Enum = None):
     if str(value) == "0":
         return False
 
-    parts = range_value.split(",")
+    parts = range_value.replace(" ", "").split(",")
 
     for part in parts:
         target = value
@@ -97,5 +97,5 @@ def check_selector_tags(tags: List[Tag], selector: str) -> bool:
         return all(selectors_check)
 
     except Exception as e:
-        print(f"Error checking selector tags: {e}")
+        logger.error(f"Error checking selector tags: {e}")
         return False
