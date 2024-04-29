@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from dateutil import tz
 from typing import Dict
 import json
 
@@ -51,7 +52,7 @@ class Service:
         else:
             self.client = boto3.client(name)
         self.action = action
-        self.now = datetime.now()
+        self.now = datetime.now(tz=tz.gettz("UTC"))
 
         self.ssm = boto3.client("ssm")
 

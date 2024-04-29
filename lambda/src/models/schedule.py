@@ -107,10 +107,8 @@ class Schedule:
         datetime
             The next execution time if it's in the interval, None otherwise.
         """
-        current_time = self.resource.service.now.replace(tzinfo=tz.gettz(self.timezone))
-        interval_time = (self.resource.service.now + timedelta(hours=self.resource.service.interval)).replace(
-            tzinfo=tz.gettz(self.timezone)
-        )
+        current_time = self.resource.service.now.astimezone(tz.gettz(self.timezone))
+        interval_time = (self.resource.service.now + timedelta(hours=self.resource.service.interval)).astimezone(tz.gettz(self.timezone))
 
         scheduled_time = datetime.strptime(self.time, "%H:%M").replace(
             year=current_time.year,
