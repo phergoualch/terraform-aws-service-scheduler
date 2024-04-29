@@ -29,16 +29,20 @@ class DocumentDB(Service):
             for page in paginator.paginate(Filters=[{"Name": "engine", "Values": ["docdb"]}]):
                 for cluster in page["DBClusters"]:
                     try:
-                        tags = self.client.list_tags_for_resource(ResourceName=cluster["DBClusterArn"])
+                        tags = self.client.list_tags_for_resource(
+                            ResourceName=cluster["DBClusterArn"]
+                        )
                     except Exception as e:
-                        logger.warning(f"Error listing tags for DocumentDB cluster {cluster['DBClusterArn']}: {e}")
+                        logger.warning(
+                            f"Error listing tags for DocumentDB cluster {cluster['DBClusterArn']}: {e}"
+                        )
                         continue
 
                     resources.append(
                         Resource(
                             id_=cluster["DBClusterArn"],
                             service=self,
-                            tags=[Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]],
+                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
                             attributes={"name": cluster["DBClusterIdentifier"]},
                         )
                     )

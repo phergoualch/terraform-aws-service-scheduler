@@ -24,16 +24,21 @@ resource "aws_lambda_function" "list_resources" {
 
   environment {
     variables = {
-      DEFAULT_TIMEZONE   = var.default_timezone
-      EXECUTION_INTERVAL = var.execution_interval
-      TAGS_MAPPING       = jsonencode(var.tags_mapping)
-      TAGS_PREFIX        = var.tags_prefix
+      DEFAULT_TIMEZONE      = var.default_timezone
+      EXECUTION_INTERVAL    = var.execution_interval
+      TAGS_MAPPING          = jsonencode(var.tags_mapping)
+      TAGS_PREFIX           = var.tags_prefix
+      SCHEDULE_WITHOUT_TAGS = jsonencode(var.schedule_without_tags)
+      DEFAULT_SCHEDULE      = jsonencode(var.default_schedule)
     }
   }
 
-  depends_on = [
-    aws_cloudwatch_log_group.list_resources
-  ]
+  logging_config {
+    log_format            = "JSON"
+    log_group             = aws_cloudwatch_log_group.list_resources.name
+    system_log_level      = "WARN"
+    application_log_level = "INFO"
+  }
 }
 
 resource "aws_cloudwatch_log_group" "list_resources" {
@@ -208,6 +213,26 @@ resource "aws_iam_role" "list_resources" {
   }
 
   dynamic "inline_policy" {
+    for_each = contains(var.enabled_services, "elasticache") ? [1] : []
+    content {
+      name = "ElastiCache"
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow",
+            Action = [
+              "elasticache:DescribeCacheClusters",
+              "elasticache:ListTagsForResource",
+            ],
+            Resource = "*",
+          }
+        ]
+      })
+    }
+  }
+
+  dynamic "inline_policy" {
     for_each = contains(var.enabled_services, "lambda") ? [1] : []
     content {
       name = "Lambda"
@@ -215,8 +240,31 @@ resource "aws_iam_role" "list_resources" {
         Version = "2012-10-17"
         Statement = [
           {
-            Effect   = "Allow",
-            Action   = "lambda:List*",
+            Effect = "Allow",
+            Action = [
+              "lambda:ListFunctions",
+              "lambda:ListTags",
+            ],
+            Resource = "*",
+          }
+        ]
+      })
+    }
+  }
+
+  dynamic "inline_policy" {
+    for_each = contains(var.enabled_services, "cloudwatch") ? [1] : []
+    content {
+      name = "CloudWatch"
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect = "Allow",
+            Action = [
+              "cloudwatch:DescribeAlarms",
+              "cloudwatch:ListTagsForResource",
+            ],
             Resource = "*",
           }
         ]

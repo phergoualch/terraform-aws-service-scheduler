@@ -25,13 +25,15 @@ class ASG(Service):
         logger.info("Listing Autoscaling Groups")
 
         try:
-            for page in paginator.paginate(Filters=[{"Name": f"tag:{self.get_tag_key('enabled')}", "Values": ["true"]}]):
+            for page in paginator.paginate(
+                Filters=[{"Name": f"tag:{self.get_tag_key('enabled')}", "Values": ["true"]}]
+            ):
                 for group in page["AutoScalingGroups"]:
                     resources.append(
                         Resource(
                             id_=group["AutoScalingGroupARN"],
                             service=self,
-                            tags=[Tag(tag["Key"], tag["Value"]) for tag in group["Tags"]],
+                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in group["Tags"]]),
                             attributes={"name": group["AutoScalingGroupName"]},
                         )
                     )

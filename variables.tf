@@ -7,11 +7,11 @@ variable "default_timezone" {
 variable "enabled_services" {
   description = "The list of services to enable"
   type        = list(string)
-  default     = ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora"]
+  default     = ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"]
 
   validation {
-    condition     = !contains([for s in var.enabled_services : contains(["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora"], s)], false)
-    error_message = "The list of enabled services must be a subset of [\"ec2\", \"asg\", \"ecs\", \"rds\", \"documentdb\", \"lambda\", \"apprunner\", \"aurora\"]"
+    condition     = !contains([for s in var.enabled_services : contains(["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"], s)], false)
+    error_message = "The list of enabled services must be a subset of [\"ec2\", \"asg\", \"ecs\", \"rds\", \"documentdb\", \"lambda\", \"apprunner\", \"aurora\", \"elasticache\", \"cloudwatch\"]"
   }
 }
 
@@ -76,6 +76,18 @@ variable "tags_mapping" {
 
 variable "deploy_multiple_regions" {
   description = "If true, the IAM roles will be named with the region short name to allow deployment in multiple regions"
+  type        = bool
+  default     = false
+}
+
+variable "default_schedule" {
+  description = "The default schedule to use if no tags are found"
+  type        = map(string)
+  default     = {}
+}
+
+variable "schedule_without_tags" {
+  description = "If true, the resources will be scheduled with the default schedule if no tags are found and the enabled tag is not false"
   type        = bool
   default     = false
 }

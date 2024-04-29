@@ -30,14 +30,16 @@ class Lambda(Service):
                     try:
                         tags = self.client.list_tags(Resource=function["FunctionArn"])
                     except Exception as e:
-                        logger.warning(f"Error listing tags for Lambda function {function['FunctionArn']}: {e}")
+                        logger.warning(
+                            f"Error listing tags for Lambda function {function['FunctionArn']}: {e}"
+                        )
                         continue
 
                     resources.append(
                         Resource(
                             id_=function["FunctionArn"],
                             service=self,
-                            tags=[Tag(tag, tags["Tags"][tag]) for tag in tags["Tags"]],
+                            tags=set([Tag(tag, tags["Tags"][tag]) for tag in tags["Tags"]]),
                             attributes={"name": function["FunctionName"]},
                         )
                     )

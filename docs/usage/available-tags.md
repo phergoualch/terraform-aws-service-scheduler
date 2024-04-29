@@ -133,3 +133,13 @@ The tag `parameter` is used to to define scheduler parameters in a parameter sto
     ```
     parameter = "/scheduler/parameter"
     ```
+
+## Node type
+
+Some services, like ElastiCache, can't be stopped but can be resized. The scheduler can resize the cluster to a desired node type. The tags used to define the cluster node type are `scheduler:start-node-type` and `scheduler:stop-node-type`.
+
+!!! example
+    ```
+    scheduler:start-node-type = "cache.t4g.medium"
+    scheduler:stop-node-type = "cache.t4g.micro"
+    ```

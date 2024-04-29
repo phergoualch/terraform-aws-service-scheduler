@@ -1,0 +1,69 @@
+{
+  "StartAt": "ListResourcesElasticache",
+  "States": {
+    "ListResourcesElasticache": {
+      "Next": "ResourceMapElasticache",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "elasticache"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapElasticache": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitElasticache",
+        "States": {
+          "ErrorCatcherElasticache": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "ModifyCacheCluster": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherElasticache"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "ApplyImmediately": "true",
+              "CacheClusterId.$": "$.attributes.id",
+              "CacheNodeType.$": "$.attributes.nodeType"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:elasticache:modifyCacheCluster",
+            "Type": "Task"
+          },
+          "WaitElasticache": {
+            "Next": "ModifyCacheCluster",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

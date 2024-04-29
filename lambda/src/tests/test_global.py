@@ -35,14 +35,16 @@ def service():
 @pytest.fixture
 def resource(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("scheduler:start-time", "10:00"),
-            Tag("scheduler:timezone", "UTC"),
-        ],
-        {"id": "id"},
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("scheduler:start-time", "10:00"),
+                Tag("scheduler:timezone", "UTC"),
+            ]
+        ),
+        attributes={"id": "id"},
     )
     return resource
 
@@ -92,21 +94,26 @@ def test_resource_is_enabled_missing_tag(service):
 def test_get_tag_key(service):
     assert service.get_tag_key("enabled") == "scheduler:enabled"
     assert service.get_tag_key("time", action=True) == "scheduler:start-time"
-    assert service.get_tag_key("active-months", action=True, iterator=3) == "scheduler:start-active-months:3"
+    assert (
+        service.get_tag_key("active-months", action=True, iterator=3)
+        == "scheduler:start-active-months:3"
+    )
     assert service.get_tag_key("active-days", iterator=1) == "scheduler:active-days:1"
 
 
 @pytest.fixture
 def resource1(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("application", "app1"),
-            Tag("environment", "dev"),
-            Tag("team", "team1"),
-        ],
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("application", "app1"),
+                Tag("environment", "dev"),
+                Tag("team", "team1"),
+            ]
+        ),
     )
     return resource
 
@@ -116,20 +123,24 @@ def test_manual_delay(delay, resource):
     selectors = [{"services": "ec2", "tags": "all", "delay": delay}]
     resource.get_next_execution_time_manual(selectors=selectors)
 
-    assert resource.next_execution_time == (resource.service.now + timedelta(minutes=delay)).replace(microsecond=0, tzinfo=tz.tzlocal())
+    assert resource.next_execution_time == (
+        resource.service.now + timedelta(minutes=delay)
+    ).replace(microsecond=0, tzinfo=tz.tzlocal())
 
 
 @pytest.fixture
 def resource2(service):
     resource = Resource(
-        "arn",
-        service,
-        [
-            Tag("scheduler:enabled", "true"),
-            Tag("application", "app2"),
-            Tag("environment", "prod"),
-            Tag("team", "team1"),
-        ],
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:enabled", "true"),
+                Tag("application", "app2"),
+                Tag("environment", "prod"),
+                Tag("team", "team1"),
+            ]
+        ),
     )
     return resource
 

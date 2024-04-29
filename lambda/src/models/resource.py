@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Set
 from datetime import timedelta
 from dateutil import tz
 import json
@@ -22,7 +22,7 @@ class Resource:
         The ID of the resource.
     service : Service
         The associated service.
-    tags : List[Tag]
+    tags : Set[Tag]
         The list of tags associated with the resource.
     attributes : Dict
         Additional attributes.
@@ -55,7 +55,7 @@ class Resource:
         Return a JSON representation of the resource to return to Step Functions.
     """
 
-    def __init__(self, id_: str, service: Service, tags: List[Tag], attributes: Dict = None):
+    def __init__(self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None):
         """
         Initialize a Resource instance.
 
@@ -65,7 +65,7 @@ class Resource:
             The ID of the resource.
         service : Service
             The associated service.
-        tags : List[Tag]
+        tags : Set[Tag]
             The list of tags associated with the resource.
         attributes : Dict, optional
             Additional attributes, by default None.
@@ -79,10 +79,24 @@ class Resource:
         self.iterators = []
         self.next_execution_time = None
 
+        # Check if the resource should be scheduled using default schedule, and load the default schedule tags
+        if self.service.schedule_without_tags:
+            self.tags.update(
+                [
+                    Tag(f"{self.service.tags_prefix}:{key}", value)
+                    for key, value in self.service.default_schedule.items()
+                ]
+            )
+            # Add enabled tag to the resource if it's scheduled using default schedule, will not override if already set
+            self.tags.add(Tag(f"{self.service.tags_prefix}:enabled", "true"))
+
         self.get_schedule_attributes()
 
         # Load tags from parameters to the resource
-        if any(iterator.type == IteratorType.PARAMETER for iterator in self.iterators) and self.enabled:
+        if (
+            any(iterator.type == IteratorType.PARAMETER for iterator in self.iterators)
+            and self.enabled
+        ):
             for iterator in self.iterators:
                 if iterator.type == IteratorType.PARAMETER:
                     self.load_tags_from_parameter(iterator=iterator.iterator)
@@ -211,7 +225,11 @@ class Resource:
         ]
 
         for pattern in tag_patterns:
-            tag_key = self.service.get_tag_key(pattern["key"], action=pattern.get("action", False), iterator=pattern.get("iterator", None))
+            tag_key = self.service.get_tag_key(
+                pattern["key"],
+                action=pattern.get("action", False),
+                iterator=pattern.get("iterator", None),
+            )
             matching_tag = next((tag for tag in self.tags if tag.key == tag_key), None)
             if matching_tag:
                 schedule_attributes[pattern["key"].replace("-", "_")] = matching_tag.value
@@ -220,14 +238,12 @@ class Resource:
 
     def load_tags_from_parameter(self, iterator: int = None):
         """
-                Load the resource tags from the parameter store parameter.
+        Load the resource tags from the parameter store parameter.
 
-                Parameters
-                ----------
-                iterator : int, optional
-                    The iterator to use, by default None
-
-        .
+        Parameters
+        ----------
+        iterator : int, optional
+            The iterator to use, by default None
         """
         parameter_tag = self.service.get_tag_key("parameter", iterator=iterator)
         parameter_name = next((tag.value for tag in self.tags if tag.key == parameter_tag), None)
@@ -244,14 +260,19 @@ class Resource:
             try:
                 parameter_tags.append(
                     Tag(
-                        key=f"{self.service.tags_prefix}:{key}:{iterator}" if iterator else f"{self.service.tags_prefix}:{key}", value=value
+                        key=(
+                            f"{self.service.tags_prefix}:{key}:{iterator}"
+                            if iterator
+                            else f"{self.service.tags_prefix}:{key}"
+                        ),
+                        value=value,
                     )
                 )
             except Exception as e:
                 logger.warning(f"Could not load tag {key} from parameter {parameter_tag}: {e}")
                 continue
 
-        self.tags.extend(parameter_tags)
+        self.tags.update(parameter_tags)
 
     def get_next_execution_time_auto(self):
         """
@@ -279,11 +300,18 @@ class Resource:
             List of selector conditions.
         """
         for selector in selectors:
-            if self.service.name in selector["services"].split(",") or selector["services"] == "all":
+            if (
+                self.service.name in selector["services"].split(",")
+                or selector["services"] == "all"
+            ):
                 if check_selector_tags(self.tags, selector["tags"]):
-                    self.next_execution_time = self.service.now + timedelta(minutes=selector.get("delay", 0))
+                    self.next_execution_time = self.service.now + timedelta(
+                        minutes=selector.get("delay", 0)
+                    )
                     # Get current timezone and set the next execution time to the next minute to avoid running the resource immediately
-                    self.next_execution_time = self.next_execution_time.replace(tzinfo=tz.tzlocal()).replace(microsecond=0)
+                    self.next_execution_time = self.next_execution_time.replace(
+                        tzinfo=tz.tzlocal()
+                    ).replace(microsecond=0)
                     break
         else:
             self.next_execution_time = None
@@ -301,6 +329,12 @@ class Resource:
         return {
             "id": self.id,
             "attributes": self.attributes,
-            "nextExecutionTime": self.next_execution_time.isoformat() if self.next_execution_time else None,
-            "ttl": str(int((self.next_execution_time + timedelta(days=365)).timestamp())) if self.next_execution_time else None,
+            "nextExecutionTime": (
+                self.next_execution_time.isoformat() if self.next_execution_time else None
+            ),
+            "ttl": (
+                str(int((self.next_execution_time + timedelta(days=365)).timestamp()))
+                if self.next_execution_time
+                else None
+            ),
         }

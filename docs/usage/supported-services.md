@@ -63,3 +63,19 @@ Lambda functions can be scheduled for "stop" actions, where the scheduler sets t
 ## AppRunner
 
 AppRunner services can be scheduled.
+
+## ElastiCache (Redis)
+
+Elaticache clusters can't be stopped, but the scheduler can be used to resize the cluster nodes. The scheduler will resize the cluster to a desized node type.
+The tags used to define the cluster node type are `scheduler:start-node-type` and `scheduler:stop-node-type`.
+
+!!! warning
+    The scheduler will not stop the cluster, but resize it to the desired node type.
+
+    Memcached clusters are not supported.
+
+    Redis in cluster mode enabled is not supported.
+
+## Cloudwatch Alarms
+
+Both metric and composite alarms can be scheduled. When the scheduler initiates a stop, it disables the alarm actions. The scheduler will re-enable the alarm actions when the service is started. This can be used in conjunction with scheduling a resource, to avoid unnecessary alarms during the scheduled downtime.

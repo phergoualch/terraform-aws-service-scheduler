@@ -34,14 +34,18 @@ class ECS(Service):
                             try:
                                 tags = self.client.list_tags_for_resource(resourceArn=service_arn)
                             except Exception as e:
-                                logger.warning(f"Error listing tags for ECS service {service_arn}: {e}")
+                                logger.warning(
+                                    f"Error listing tags for ECS service {service_arn}: {e}"
+                                )
                                 continue
 
                             resources.append(
                                 Resource(
                                     id_=service_arn,
                                     service=self,
-                                    tags=[Tag(tag["key"], tag["value"]) for tag in tags["tags"]],
+                                    tags=set(
+                                        [Tag(tag["key"], tag["value"]) for tag in tags["tags"]]
+                                    ),
                                     attributes={
                                         "cluster": cluster_arn.split("/")[-1],
                                         "service": service_arn.split("/")[-1],
