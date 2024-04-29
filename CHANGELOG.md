@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2](https://github.com/phergoualch/terraform-aws-service-scheduler/compare/v2.0.1...v2.0.2) (2024-04-29)
+
+
+### Bug Fixes
+
+* **lambda:** fixed a bug where the timezone was not calculated correctly ([54b9c0e](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/54b9c0ef597aaaa4aa98c3cdf711e07cc97d1d3f))
+
 ## [2.0.1](https://github.com/phergoualch/terraform-aws-service-scheduler/compare/v2.0.0...v2.0.1) (2024-04-10)
 
 
