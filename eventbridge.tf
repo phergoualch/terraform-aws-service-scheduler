@@ -26,18 +26,19 @@ resource "aws_iam_role" "eventbridge" {
       }
     ]
   })
+}
 
-  inline_policy {
-    name = "StepFunctions"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Action   = "states:StartExecution"
-          Effect   = "Allow"
-          Resource = [for state_machine in aws_sfn_state_machine.main : state_machine.arn]
-        }
-      ]
-    })
-  }
+resource "aws_iam_role_policy" "eventbridge_stepfunctions" {
+  name = "StepFunctions"
+  role = aws_iam_role.eventbridge.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "states:StartExecution"
+        Effect   = "Allow"
+        Resource = [for state_machine in aws_sfn_state_machine.main : state_machine.arn]
+      }
+    ]
+  })
 }

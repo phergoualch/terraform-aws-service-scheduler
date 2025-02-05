@@ -17,22 +17,6 @@ resource "aws_sfn_state_machine" "main" {
   })
 }
 
-locals {
-  scheduler_is_true_condition = {
-    StringEquals = {
-      "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "true"
-    }
-  }
-
-  scheduler_is_not_false_condition = {
-    StringNotEquals = {
-      "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}" = "false"
-    }
-  }
-
-  scheduler_condition = var.schedule_without_tags ? local.scheduler_is_not_false_condition : local.scheduler_is_true_condition
-}
-
 resource "aws_iam_role" "state_machine" {
   name = var.deploy_multiple_regions ? "${var.app_name}-state-machine-${local.region_short_name}" : "${var.app_name}-state-machine"
   assume_role_policy = jsonencode({
@@ -47,252 +31,87 @@ resource "aws_iam_role" "state_machine" {
       },
     ]
   })
+}
 
-  inline_policy {
-    name = "InvokeLambda"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow",
-          Action = [
-            "lambda:InvokeFunction"
-          ],
-          Resource = aws_lambda_function.list_resources.arn,
+resource "aws_iam_role_policy" "state_machine_invoke_lambda" {
+  name = "InvokeLambda"
+  role = aws_iam_role.state_machine.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "lambda:InvokeFunction"
+        ],
+        Resource = aws_lambda_function.list_resources.arn,
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "state_machine_dynamodb" {
+  count = local.create_dynamodb ? 1 : 0
+  name  = "DynamoDBAccess"
+  role  = aws_iam_role.state_machine.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:UpdateItem",
+          "dynamodb:PutItem",
+          "dynamodb:GetItem"
+        ]
+        Resource = aws_dynamodb_table.this[0].arn,
+      }
+    ]
+  })
+}
+
+data "aws_iam_policy_document" "state_machine_services" {
+  # Describe statements (without condition)
+  dynamic "statement" {
+    for_each = {
+      for service, permissions in local.state_machine_services_permissions :
+      service => permissions.describe if contains(var.enabled_services, service) && try(length(permissions.describe) > 0, false)
+    }
+
+    content {
+      effect    = "Allow"
+      actions   = statement.value
+      resources = ["*"]
+    }
+  }
+
+  # Update statements (with condition)
+  dynamic "statement" {
+    for_each = {
+      for service, permissions in local.state_machine_services_permissions :
+      service => permissions.update if contains(var.enabled_services, service) && try(length(permissions.update) > 0, false)
+    }
+
+    content {
+      effect    = "Allow"
+      actions   = statement.value
+      resources = ["*"]
+
+      dynamic "condition" {
+        for_each = var.schedule_without_tags ? ["StringNotEquals"] : ["StringEquals"]
+
+        content {
+          test     = condition.value
+          variable = "aws:ResourceTag/${var.tags_prefix}:${var.tags_mapping["enabled"]}"
+          values   = var.schedule_without_tags ? ["false"] : ["true"]
         }
-      ]
-    })
-  }
-
-  dynamic "inline_policy" {
-    for_each = local.create_dynamodb ? [1] : []
-    content {
-      name = "StoreDynamoDB"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow"
-            Action = [
-              "dynamodb:UpdateItem",
-              "dynamodb:PutItem",
-              "dynamodb:GetItem"
-            ]
-            Resource = aws_dynamodb_table.this[0].arn,
-          }
-        ]
-      })
+      }
     }
   }
+}
 
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "ec2") ? [1] : []
-    content {
-      name = "EC2"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Action = [
-              "ec2:StartInstances",
-              "ec2:StopInstances"
-            ],
-            Effect    = "Allow",
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "ecs") ? [1] : []
-    content {
-      name = "ECS"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect   = "Allow",
-            Action   = "ecs:DescribeServices",
-            Resource = "*",
-          },
-          {
-            Effect    = "Allow",
-            Action    = "ecs:UpdateService",
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "asg") ? [1] : []
-    content {
-      name = "AutoScaling"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect   = "Allow",
-            Action   = "autoscaling:DescribeAutoScalingGroups",
-            Resource = "*",
-          },
-          {
-            Effect    = "Allow",
-            Action    = "autoscaling:UpdateAutoScalingGroup"
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "apprunner") ? [1] : []
-    content {
-      name = "AppRunner"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "apprunner:PauseService",
-              "apprunner:ResumeService"
-            ],
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "rds") ? [1] : []
-    content {
-      name = "RDS"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "rds:StartDBInstance",
-              "rds:StopDBInstance"
-            ],
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "aurora") ? [1] : []
-    content {
-      name = "Aurora"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "rds:StartDBCluster",
-              "rds:StopDBCluster"
-            ],
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "documentdb") ? [1] : []
-    content {
-      name = "DocumentDB"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "rds:StartDBCluster",
-              "rds:StopDBCluster",
-            ],
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "elasticache") ? [1] : []
-    content {
-      name = "ElastiCache"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect    = "Allow",
-            Action    = "elasticache:ModifyCacheCluster",
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "lambda") ? [1] : []
-    content {
-      name = "Lambda"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "lambda:DeleteFunctionConcurrency",
-              "lambda:PutFunctionConcurrency",
-            ],
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "cloudwatch") ? [1] : []
-    content {
-      name = "CloudWatch"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "cloudwatch:EnableAlarmActions",
-              "cloudwatch:DisableAlarmActions",
-            ],
-            Resource  = "*",
-            Condition = local.scheduler_condition
-          }
-        ]
-      })
-    }
-  }
+resource "aws_iam_role_policy" "state_machine_services" {
+  name   = "ServicesAccess"
+  role   = aws_iam_role.state_machine.name
+  policy = data.aws_iam_policy_document.state_machine_services.json
 }
