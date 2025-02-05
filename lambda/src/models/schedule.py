@@ -123,11 +123,14 @@ class Schedule:
         for scheduled_time in [scheduled_time_today, scheduled_time_tomorrow]:
             if current_time <= scheduled_time <= interval_time:
                 if is_in_range(
-                    scheduled_time.strftime("%a").upper(), self.active_days, range_enum=Day
+                    scheduled_time.strftime("%a").upper(),
+                    self.active_days,
+                    range_enum=Day,
                 ):
                     if is_in_range(scheduled_time.day, self.active_days_of_month):
                         if is_in_range(
-                            str(int(scheduled_time.strftime("%U")) + 1), self.active_weeks
+                            str(int(scheduled_time.strftime("%U")) + 1),
+                            self.active_weeks,
                         ):
                             if is_in_range(
                                 scheduled_time.strftime("%b").upper(),

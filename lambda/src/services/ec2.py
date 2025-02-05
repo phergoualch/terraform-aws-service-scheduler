@@ -35,7 +35,10 @@ class EC2(Service):
                                     id_=instance["InstanceId"],
                                     service=self,
                                     tags=set(
-                                        [Tag(tag["Key"], tag["Value"]) for tag in instance["Tags"]]
+                                        [
+                                            Tag(tag["Key"], tag["Value"])
+                                            for tag in instance["Tags"]
+                                        ]
                                     ),
                                 )
                             )

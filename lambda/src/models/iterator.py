@@ -107,9 +107,9 @@ class Iterator:
         bool
             True if this Iterator object is less than the other, False otherwise.
         """
-        if self.iterator == None:
+        if self.iterator is None:
             return True
-        elif other.iterator == None:
+        elif other.iterator is None:
             return False
         else:
             return self.iterator < other.iterator

@@ -55,7 +55,9 @@ class Resource:
         Return a JSON representation of the resource to return to Step Functions.
     """
 
-    def __init__(self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None):
+    def __init__(
+        self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None
+    ):
         """
         Initialize a Resource instance.
 
@@ -165,7 +167,9 @@ class Resource:
             if split[-1].isdigit():
                 iterator = int(split[-1])
                 if self.service.get_tag_key("parameter", iterator=iterator) == tag.key:
-                    iterators.add(Iterator(iterator=iterator, type=IteratorType.PARAMETER))
+                    iterators.add(
+                        Iterator(iterator=iterator, type=IteratorType.PARAMETER)
+                    )
                 else:
                     iterators.add(Iterator(iterator=iterator, type=IteratorType.TAG))
             else:
@@ -232,10 +236,16 @@ class Resource:
             )
             matching_tag = next((tag for tag in self.tags if tag.key == tag_key), None)
             if matching_tag:
-                if not matching_tag.value.strip():  # Check if value is empty or only whitespace
-                  logger.warning(f"Tag {tag_key} has an empty value, the resource will be skipped.")
-                  raise ValueError(f"Tag {tag_key} has an empty value")
-                schedule_attributes[pattern["key"].replace("-", "_")] = matching_tag.value
+                if (
+                    not matching_tag.value.strip()
+                ):  # Check if value is empty or only whitespace
+                    logger.warning(
+                        f"Tag {tag_key} has an empty value, the resource will be skipped."
+                    )
+                    raise ValueError(f"Tag {tag_key} has an empty value")
+                schedule_attributes[pattern["key"].replace("-", "_")] = (
+                    matching_tag.value
+                )
 
         return Schedule(resource=self, **schedule_attributes)
 
@@ -249,10 +259,14 @@ class Resource:
             The iterator to use, by default None
         """
         parameter_tag = self.service.get_tag_key("parameter", iterator=iterator)
-        parameter_name = next((tag.value for tag in self.tags if tag.key == parameter_tag), None)
+        parameter_name = next(
+            (tag.value for tag in self.tags if tag.key == parameter_tag), None
+        )
 
         try:
-            tags = self.service.ssm.get_parameter(Name=parameter_name)["Parameter"]["Value"]
+            tags = self.service.ssm.get_parameter(Name=parameter_name)["Parameter"][
+                "Value"
+            ]
         except Exception as e:
             logger.warning(f"Could not load tags from parameter {parameter_tag}: {e}")
             raise ValueError(f"Could not load tags from parameter {parameter_tag}")
@@ -272,7 +286,9 @@ class Resource:
                     )
                 )
             except Exception as e:
-                logger.warning(f"Could not load tag {key} from parameter {parameter_tag}: {e}")
+                logger.warning(
+                    f"Could not load tag {key} from parameter {parameter_tag}: {e}"
+                )
                 continue
 
         self.tags.update(parameter_tags)
@@ -283,8 +299,13 @@ class Resource:
         """
 
         # Disable the resource if it does not have a time tag
-        if not any(tag.key == self.service.get_tag_key("time", action=True) for tag in self.tags):
-            logger.warning(f"Resource {self.id} does not have a time tag, the resource will be skipped.")
+        if not any(
+            tag.key == self.service.get_tag_key("time", action=True)
+            for tag in self.tags
+        ):
+            logger.warning(
+                f"Resource {self.id} does not have a time tag, the resource will be skipped."
+            )
             raise ValueError("Resource does not have a time tag")
 
         for iterator in self.iterators:
@@ -333,7 +354,9 @@ class Resource:
             "id": self.id,
             "attributes": self.attributes,
             "nextExecutionTime": (
-                self.next_execution_time.isoformat() if self.next_execution_time else None
+                self.next_execution_time.isoformat()
+                if self.next_execution_time
+                else None
             ),
             "ttl": (
                 str(int((self.next_execution_time + timedelta(days=365)).timestamp()))

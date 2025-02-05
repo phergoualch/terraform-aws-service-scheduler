@@ -30,7 +30,9 @@ class AppRunner(Service):
 
                 for service in response["ServiceSummaryList"]:
                     try:
-                        tags = self.client.list_tags_for_resource(ResourceArn=service["ServiceArn"])
+                        tags = self.client.list_tags_for_resource(
+                            ResourceArn=service["ServiceArn"]
+                        )
                     except Exception as e:
                         logger.warning(
                             f"Error listing tags for AppRunner service {service['ServiceArn']}: {e}"
@@ -42,7 +44,10 @@ class AppRunner(Service):
                             id_=service["ServiceArn"],
                             service=self,
                             tags=set(
-                                [Tag(tag["Key"], tag["Value"]) for tag in tags.get("Tags", [])]
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags.get("Tags", [])
+                                ]
                             ),
                         )
                     )

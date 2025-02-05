@@ -75,7 +75,9 @@ class Service:
             self.tags_mapping = json.loads(os.environ.get("TAGS_MAPPING"))
             self.interval = int(os.environ.get("EXECUTION_INTERVAL"))
             self.default_timezone = os.environ.get("DEFAULT_TIMEZONE")
-            self.schedule_without_tags = json.loads(os.environ.get("SCHEDULE_WITHOUT_TAGS"))
+            self.schedule_without_tags = json.loads(
+                os.environ.get("SCHEDULE_WITHOUT_TAGS")
+            )
             self.default_schedule = json.loads(os.environ.get("DEFAULT_SCHEDULE"))
 
     def __repr__(self):
@@ -108,11 +110,11 @@ class Service:
             The tag key.
         """
         if action and iterator:
-            return (
-                f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}:{iterator}"
-            )
+            return f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}:{iterator}"
         elif action:
-            return f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}"
+            return (
+                f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}"
+            )
         elif iterator:
             return f"{self.tags_prefix}:{self.tags_mapping[tag_name]}:{iterator}"
         else:
