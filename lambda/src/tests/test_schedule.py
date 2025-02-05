@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+# ruff: noqa: F811
+from datetime import datetime
 
 import pytest
 from dateutil import tz
@@ -7,8 +8,7 @@ from models.enums import Day, Month, IteratorType, Action
 from models.iterator import Iterator
 from utils.tools import is_in_range
 
-from tests.test_global import service
-
+from tests.test_global import service # noqa: F401
 
 @pytest.fixture
 def resource(service):
@@ -35,24 +35,24 @@ def test_schedule(resource):
 
 
 def test_is_day_in_range():
-    assert is_in_range(Day.MON.name, "MON-SUN", range_enum=Day) == True
-    assert is_in_range(Day.TUE.name, "SAT-WED", range_enum=Day) == True
-    assert is_in_range(Day.TUE.name, "FRI-SUN", range_enum=Day) == False
+    assert is_in_range(Day.MON.name, "MON-SUN", range_enum=Day)
+    assert is_in_range(Day.TUE.name, "SAT-WED", range_enum=Day)
+    assert not is_in_range(Day.TUE.name, "FRI-SUN", range_enum=Day)
 
 
 def test_is_month_in_range():
-    assert is_in_range(Month.MAR.name, "JAN-APR", range_enum=Month) == True
-    assert is_in_range(Month.JUL.name, "JUL,DEC", range_enum=Month) == True
-    assert is_in_range(Month.AUG.name, "JAN,APR-JUL,OCT", range_enum=Month) == False
+    assert is_in_range(Month.MAR.name, "JAN-APR", range_enum=Month)
+    assert is_in_range(Month.JUL.name, "JUL,DEC", range_enum=Month)
+    assert not is_in_range(Month.AUG.name, "JAN,APR-JUL,OCT", range_enum=Month)
 
 
 def test_is_number_in_range():
-    assert is_in_range(17, "10-31") == True
-    assert is_in_range(3, "1,3,7") == True
-    assert is_in_range(0, "1-31") == False
-    assert is_in_range(32, "1-31") == False
-    assert is_in_range(17, "1-16,18-31") == False
-    assert is_in_range(23, "17-28,19-37") == True
+    assert is_in_range(17, "10-31")
+    assert is_in_range(3, "1,3,7")
+    assert not is_in_range(0, "1-31")
+    assert not is_in_range(32, "1-31")
+    assert not is_in_range(17, "1-16,18-31")
+    assert is_in_range(23, "17-28,19-37")
 
 
 def test_get_next_execution_time(resource):
@@ -63,7 +63,7 @@ def test_get_next_execution_time(resource):
     )
     resource.service.now = datetime(2024, 1, 26, 14, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
-    assert schedule.get_next_execution_time() == None
+    assert schedule.get_next_execution_time() is None
 
 
 def test_get_next_execution_time_next_day(service):
@@ -86,7 +86,7 @@ def test_get_next_execution_time_next_day(service):
     )
     resource.service.now = datetime(2024, 1, 26, 18, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
-    assert schedule.get_next_execution_time() == None
+    assert schedule.get_next_execution_time() is None
 
 
 def test_iterators(service):
@@ -158,7 +158,9 @@ def test_multi_schedule_same_day(service):
     resource.service.now = datetime(2024, 1, 1, 14, 0, 0, tzinfo=tz.gettz("UTC"))
     resource.get_next_execution_time_auto()
 
-    assert resource.next_execution_time == datetime(2024, 1, 1, 18, 0, 0, tzinfo=tz.gettz("UTC"))
+    assert resource.next_execution_time == datetime(
+        2024, 1, 1, 18, 0, 0, tzinfo=tz.gettz("UTC")
+    )
 
     resource = Resource(
         id_="arn",
@@ -179,4 +181,6 @@ def test_multi_schedule_same_day(service):
     resource.service.now = datetime(2024, 1, 1, 22, 0, 0, tzinfo=tz.gettz("UTC"))
     resource.get_next_execution_time_auto()
 
-    assert resource.next_execution_time == datetime(2024, 1, 2, 2, 0, 0, tzinfo=tz.gettz("UTC"))
+    assert resource.next_execution_time == datetime(
+        2024, 1, 2, 2, 0, 0, tzinfo=tz.gettz("UTC")
+    )

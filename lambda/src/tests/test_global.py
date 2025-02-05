@@ -83,12 +83,12 @@ def test_resource(resource):
 
 
 def test_resource_is_enabled(resource):
-    assert resource.enabled == True
+    assert resource.enabled
 
 
 def test_resource_is_enabled_missing_tag(service):
     resource = Resource("arn", service, [Tag("scheduler:wrong_tag", "true")])
-    assert resource.enabled == False
+    assert not resource.enabled
 
 
 def test_get_tag_key(service):

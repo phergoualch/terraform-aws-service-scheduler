@@ -42,7 +42,12 @@ class RDS(Service):
                         Resource(
                             id_=instance["DBInstanceArn"],
                             service=self,
-                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
+                            tags=set(
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags["TagList"]
+                                ]
+                            ),
                             attributes={"name": instance["DBInstanceIdentifier"]},
                         )
                     )

@@ -26,7 +26,9 @@ class DocumentDB(Service):
         logger.info("Listing DocumentDB clusters")
 
         try:
-            for page in paginator.paginate(Filters=[{"Name": "engine", "Values": ["docdb"]}]):
+            for page in paginator.paginate(
+                Filters=[{"Name": "engine", "Values": ["docdb"]}]
+            ):
                 for cluster in page["DBClusters"]:
                     try:
                         tags = self.client.list_tags_for_resource(
@@ -42,7 +44,12 @@ class DocumentDB(Service):
                         Resource(
                             id_=cluster["DBClusterArn"],
                             service=self,
-                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
+                            tags=set(
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags["TagList"]
+                                ]
+                            ),
                             attributes={"name": cluster["DBClusterIdentifier"]},
                         )
                     )
