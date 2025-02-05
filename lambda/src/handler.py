@@ -77,18 +77,21 @@ def handler(event, context):
     resources = service.list_resources()
 
     for resource in resources:
-        if resource.enabled:
-            if selectors:
-                resource.get_next_execution_time_manual(selectors=selectors)
-            else:
-                resource.get_next_execution_time_auto()
+        try:
+            if resource.enabled:
+              if selectors:
+                  resource.get_next_execution_time_manual(selectors=selectors)
+              else:
+                  resource.get_next_execution_time_auto()
 
-            if resource.next_execution_time:
-                logger.info(
-                    f"Next {service.action.value} time for {resource.id} is {resource.next_execution_time}"
-                )
-                payload.append(resource)
-            else:
-                logger.info(f"No {service.action.value} time for {resource.id}")
+              if resource.next_execution_time:
+                  logger.info(
+                      f"Next {service.action.value} time for {resource.id} is {resource.next_execution_time}"
+                  )
+                  payload.append(resource)
+              else:
+                  logger.info(f"No {service.action.value} time for {resource.id}")
+        except Exception as e:
+            logger.error(f"Error processing resource {resource.id}: {str(e)}")
 
     return [resource.to_json() for resource in sorted(payload) if resource.next_execution_time]

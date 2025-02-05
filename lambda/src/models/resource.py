@@ -232,6 +232,9 @@ class Resource:
             )
             matching_tag = next((tag for tag in self.tags if tag.key == tag_key), None)
             if matching_tag:
+                if not matching_tag.value.strip():  # Check if value is empty or only whitespace
+                  logger.warning(f"Tag {tag_key} has an empty value, the resource will be skipped.")
+                  raise ValueError(f"Tag {tag_key} has an empty value")
                 schedule_attributes[pattern["key"].replace("-", "_")] = matching_tag.value
 
         return Schedule(resource=self, **schedule_attributes)
@@ -252,7 +255,7 @@ class Resource:
             tags = self.service.ssm.get_parameter(Name=parameter_name)["Parameter"]["Value"]
         except Exception as e:
             logger.warning(f"Could not load tags from parameter {parameter_tag}: {e}")
-            return
+            raise ValueError(f"Could not load tags from parameter {parameter_tag}")
 
         parameter_tags = []
 
@@ -281,8 +284,8 @@ class Resource:
 
         # Disable the resource if it does not have a time tag
         if not any(tag.key == self.service.get_tag_key("time", action=True) for tag in self.tags):
-            self.enabled = False
-            return
+            logger.warning(f"Resource {self.id} does not have a time tag, the resource will be skipped.")
+            raise ValueError("Resource does not have a time tag")
 
         for iterator in self.iterators:
             schedule = self.get_schedule_from_tags(iterator=iterator.iterator)
