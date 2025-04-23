@@ -1,9 +1,12 @@
 from datetime import datetime, timedelta
 from dateutil import tz
+import logging
 
 from models.enums import Day, Month
 from models.resource import Resource
 from utils.tools import is_in_range
+
+logger = logging.getLogger(__name__)
 
 
 class Schedule:
@@ -112,12 +115,19 @@ class Schedule:
             self.resource.service.now + timedelta(hours=self.resource.service.interval)
         ).astimezone(tz.gettz(self.timezone))
 
-        scheduled_time_today = datetime.strptime(self.time, "%H:%M").replace(
-            year=current_time.year,
-            month=current_time.month,
-            day=current_time.day,
-            tzinfo=tz.gettz(self.timezone),
-        )
+        try:
+            scheduled_time_today = datetime.strptime(self.time, "%H:%M").replace(
+                year=current_time.year,
+                month=current_time.month,
+                day=current_time.day,
+                tzinfo=tz.gettz(self.timezone),
+            )
+        except (ValueError, TypeError):
+            logger.warning(
+                f"Invalid schedule time '{self.time}' for resource {self.resource.id}, skipping resource."
+            )
+            return None
+
         scheduled_time_tomorrow = scheduled_time_today + timedelta(days=1)
 
         for scheduled_time in [scheduled_time_today, scheduled_time_tomorrow]:

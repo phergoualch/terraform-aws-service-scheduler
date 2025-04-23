@@ -83,12 +83,20 @@ class Resource:
 
         # Check if the resource should be scheduled using default schedule, and load the default schedule tags
         if self.service.schedule_without_tags:
-            self.tags.update(
-                [
-                    Tag(f"{self.service.tags_prefix}:{key}", value)
-                    for key, value in self.service.default_schedule.items()
-                ]
-            )
+            for key, value in self.service.default_schedule.items():
+                for tag in self.tags:
+                    if tag.key.split(":")[-1] == key:
+                        if tag.value == "":
+                            tag.value = value
+                else:
+                    # If the tag is not found, add it to the resource tags
+                    self.tags.add(
+                        Tag(
+                            f"{self.service.tags_prefix}:{key}",
+                            value if value is not None else "",
+                        )
+                    )
+
             # Add enabled tag to the resource if it's scheduled using default schedule, will not override if already set
             self.tags.add(Tag(f"{self.service.tags_prefix}:enabled", "true"))
 
@@ -236,16 +244,22 @@ class Resource:
             )
             matching_tag = next((tag for tag in self.tags if tag.key == tag_key), None)
             if matching_tag:
-                if (
-                    not matching_tag.value.strip()
-                ):  # Check if value is empty or only whitespace
+                key_name = pattern["key"].replace("-", "_")
+                if not matching_tag.value.strip():  # empty or whitespace
+                    builtin_default = schedule_attributes.get(key_name)
+                    if builtin_default is not None:
+                        schedule_attributes[key_name] = builtin_default
+                        logger.warning(
+                            f"Tag {tag_key} is empty, falling back to built-in default '{builtin_default}' for resource {self.id}."
+                        )
+                        continue
+
                     logger.warning(
-                        f"Tag {tag_key} has an empty value, the resource will be skipped."
+                        f"Tag {tag_key} is empty and no default exists, skipping resource {self.id}."
                     )
-                    raise ValueError(f"Tag {tag_key} has an empty value")
-                schedule_attributes[pattern["key"].replace("-", "_")] = (
-                    matching_tag.value
-                )
+                    schedule_attributes[key_name] = None
+
+                schedule_attributes[key_name] = matching_tag.value
 
         return Schedule(resource=self, **schedule_attributes)
 
