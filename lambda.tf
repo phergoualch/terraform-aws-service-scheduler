@@ -16,7 +16,7 @@ resource "aws_lambda_function" "list_resources" {
   description      = "Used by the ${var.app_name} state machines to list all resources in the account"
   role             = aws_iam_role.list_resources.arn
   handler          = "handler.handler"
-  runtime          = "python3.12"
+  runtime          = "python3.13"
   timeout          = 60
   filename         = data.archive_file.lambda.output_path
   architectures    = ["arm64"]
