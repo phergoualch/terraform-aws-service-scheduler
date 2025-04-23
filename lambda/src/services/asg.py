@@ -36,7 +36,10 @@ class ASG(Service):
                             id_=group["AutoScalingGroupARN"],
                             service=self,
                             tags=set(
-                                [Tag(tag["Key"], tag["Value"]) for tag in group["Tags"]]
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in group.get("Tags", [])
+                                ]
                             ),
                             attributes={"name": group["AutoScalingGroupName"]},
                         )

@@ -40,7 +40,10 @@ class Lambda(Service):
                             id_=function["FunctionArn"],
                             service=self,
                             tags=set(
-                                [Tag(tag, tags["Tags"][tag]) for tag in tags["Tags"]]
+                                [
+                                    Tag(tag, tags["Tags"][tag])
+                                    for tag in tags.get("Tags", [])
+                                ]
                             ),
                             attributes={"name": function["FunctionName"]},
                         )

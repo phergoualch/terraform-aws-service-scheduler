@@ -50,7 +50,7 @@ class ECS(Service):
                                     tags=set(
                                         [
                                             Tag(tag["key"], tag["value"])
-                                            for tag in tags["tags"]
+                                            for tag in tags.get("tags", [])
                                         ]
                                     ),
                                     attributes={

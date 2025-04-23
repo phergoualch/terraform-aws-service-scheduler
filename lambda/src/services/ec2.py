@@ -37,7 +37,7 @@ class EC2(Service):
                                     tags=set(
                                         [
                                             Tag(tag["Key"], tag["Value"])
-                                            for tag in instance["Tags"]
+                                            for tag in instance.get("Tags", [])
                                         ]
                                     ),
                                 )
