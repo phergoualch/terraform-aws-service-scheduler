@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
     - id: no-commit-to-branch
       args: ['--branch', 'main']
@@ -18,15 +18,14 @@ repos:
         - --autofix
     - id: check-added-large-files
     - id: check-merge-conflict
-    - id: trailing-whitespace
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.6
     hooks:
-    - id: black
-      language_version: python3.10
-      args: ['--line-length', '100']
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.89.1
+    rev: v1.99.0
     hooks:
       - id: terraform_fmt
         args:
