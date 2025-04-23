@@ -1,13 +1,11 @@
 name: Documentation to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
     branches:
       - main
-    paths:
-      - docs/**
-      - mkdocs.yml
-      - CHANGELOG.md
 
   workflow_dispatch:
 
