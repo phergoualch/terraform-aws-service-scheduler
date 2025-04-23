@@ -249,7 +249,7 @@ class Resource:
                     builtin_default = schedule_attributes.get(key_name)
                     if builtin_default is not None:
                         schedule_attributes[key_name] = builtin_default
-                        logger.warning(
+                        logger.debug(
                             f"Tag {tag_key} is empty, falling back to built-in default '{builtin_default}' for resource {self.id}."
                         )
                         continue
@@ -258,8 +258,8 @@ class Resource:
                         f"Tag {tag_key} is empty and no default exists, skipping resource {self.id}."
                     )
                     schedule_attributes[key_name] = None
-
-                schedule_attributes[key_name] = matching_tag.value
+                else:
+                    schedule_attributes[key_name] = matching_tag.value
 
         return Schedule(resource=self, **schedule_attributes)
 
