@@ -45,7 +45,10 @@ class Cloudwatch(Service):
                             id_=alarm["AlarmArn"],
                             service=self,
                             tags=set(
-                                [Tag(tag["Key"], tag["Value"]) for tag in tags["Tags"]]
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags.get("Tags", [])
+                                ]
                             ),
                             attributes={"name": alarm["AlarmName"]},
                         )

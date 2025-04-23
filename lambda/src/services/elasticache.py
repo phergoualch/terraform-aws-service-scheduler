@@ -55,7 +55,7 @@ class Elasticache(Service):
                             tags=set(
                                 [
                                     Tag(tag["Key"], tag["Value"])
-                                    for tag in tags["TagList"]
+                                    for tag in tags.get("TagList", [])
                                 ]
                             ),
                             attributes={
