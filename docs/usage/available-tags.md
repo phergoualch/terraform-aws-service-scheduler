@@ -131,7 +131,7 @@ The tag `parameter` is used to to define scheduler parameters in a parameter sto
 
 !!! example
     ```
-    parameter = "/scheduler/parameter"
+    parameter = "/service-scheduler/parameter-name"
     ```
 
 ## Node type

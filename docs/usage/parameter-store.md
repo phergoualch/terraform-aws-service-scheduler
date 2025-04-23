@@ -4,12 +4,12 @@ If you need to centralize the configuration of the scheduler, you can use the pa
 
 Using parameters can also be used for cases when the quota of tags per resource is reached (50 tags per resource).
 
-You are free to name your parameter as you want, but the parameter should start with `/scheduler-scheduler/` by default. You can modify this prefix by changing the `app_name` Terraform variable when deploying the module.
+You are free to name your parameter as you want, but the parameter should start with `/service-scheduler/` by default. You can modify this prefix by changing the `app_name` Terraform variable when deploying the module.
 
 !!! example
     ```
-    /scheduler-scheduler/weekday-8-18
-    /scheduler-scheduler/stop-weekend
+    /service-scheduler/weekday-8-18
+    /service-scheduler/stop-weekend
     ```
 
 The parameter should be a JSON object with the tag names as keys and the tag values as values.
