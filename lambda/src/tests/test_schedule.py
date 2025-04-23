@@ -4,11 +4,11 @@ from datetime import datetime
 import pytest
 from dateutil import tz
 from models import Resource, Tag
-from models.enums import Day, Month, IteratorType, Action
-from models.iterator import Iterator
+from models.enums import Day, Month, Action
 from utils.tools import is_in_range
 
-from tests.test_global import service # noqa: F401
+from tests.test_global import service  # noqa: F401
+
 
 @pytest.fixture
 def resource(service):
@@ -89,28 +89,6 @@ def test_get_next_execution_time_next_day(service):
     assert schedule.get_next_execution_time() is None
 
 
-def test_iterators(service):
-    resource = Resource(
-        id_="arn",
-        service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("scheduler:start-time", "09:00"),
-                Tag("scheduler:active-days", "MON-FRI"),
-                Tag("scheduler:start-time:1", "13:00"),
-                Tag("scheduler:active-days:1", "SAT-SUN"),
-                Tag("scheduler:parameter:2", "test"),
-            ]
-        ),
-    )
-    assert resource.iterators == [
-        Iterator(iterator=None, type=IteratorType.TAG),
-        Iterator(iterator=1, type=IteratorType.TAG),
-        Iterator(iterator=2, type=IteratorType.PARAMETER),
-    ]
-
-
 def test_schedules_iterators(service):
     resource = Resource(
         id_="arn",
@@ -184,3 +162,21 @@ def test_multi_schedule_same_day(service):
     assert resource.next_execution_time == datetime(
         2024, 1, 2, 2, 0, 0, tzinfo=tz.gettz("UTC")
     )
+
+
+def test_ignore_empty_time(service):
+    resource = Resource(
+        id_="arn",
+        service=service,
+        tags=set(
+            [
+                Tag("scheduler:start-time", ""),
+                Tag("scheduler:timezone", "UTC"),
+                Tag("scheduler:active-days", "WED-FRI, SAT"),
+            ]
+        ),
+    )
+    resource.service.now = datetime(2024, 1, 26, 22, 0, 0, tzinfo=tz.gettz("UTC"))
+    schedule = resource.get_schedule_from_tags()
+
+    assert schedule.get_next_execution_time() is None
