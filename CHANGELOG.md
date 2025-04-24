@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1](https://github.com/phergoualch/terraform-aws-service-scheduler/compare/v2.1.0...v2.1.1) (2025-04-24)
+
+### Bug Fixes
+
+* fixed a bug on empty tags and use default value if tag value is missing ([1ea6a83](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/1ea6a837e3dac78f37005f60c423a34b8fa636a2))
+* **services:** added .get to handle resource with no tags ([fddec60](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/fddec600668701b914cf4081e7fde8bbe6de8d24))
+* **src:** skip resource if empty string in tag, closes [#15](https://github.com/phergoualch/terraform-aws-service-scheduler/issues/15) ([4b84d3d](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/4b84d3d68550051692e41587777bed23e56c2268))
+* **terraform:** Terraform IAM permissions deprecations resolves [#13](https://github.com/phergoualch/terraform-aws-service-scheduler/issues/13) ([89bc3c1](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/89bc3c1d96b41c1576cab3255b8c3310b57c9b1f))
+
 ## [2.1.0](https://github.com/phergoualch/terraform-aws-service-scheduler/compare/v2.0.2...v2.1.0) (2024-11-22)
 
 ### Features
