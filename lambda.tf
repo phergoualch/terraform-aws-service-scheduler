@@ -16,7 +16,7 @@ resource "aws_lambda_function" "list_resources" {
   description      = "Used by the ${var.app_name} state machines to list all resources in the account"
   role             = aws_iam_role.list_resources.arn
   handler          = "handler.handler"
-  runtime          = "python3.12"
+  runtime          = "python3.13"
   timeout          = 60
   filename         = data.archive_file.lambda.output_path
   architectures    = ["arm64"]
@@ -62,215 +62,45 @@ resource "aws_iam_role" "list_resources" {
       },
     ]
   })
+}
 
-  inline_policy {
-    name = "GetParameter"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect   = "Allow",
-          Action   = "ssm:GetParameter",
-          Resource = "arn:aws:ssm:*:*:parameter/${var.app_name}/*",
-        }
-      ]
-    })
-  }
+resource "aws_iam_role_policy" "list_resources_get_parameters" {
+  name = "GetParameters"
+  role = aws_iam_role.list_resources.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow",
+        Action   = "ssm:GetParameter",
+        Resource = "arn:aws:ssm:*:*:parameter/${var.app_name}/*",
+      }
+    ]
+  })
+}
 
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "ec2") ? [1] : []
+resource "aws_iam_role_policy_attachment" "list_resources_managed" {
+  role       = aws_iam_role.list_resources.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+data "aws_iam_policy_document" "list_resources_services" {
+  dynamic "statement" {
+    for_each = {
+      for service, permissions in local.list_resources_permissions :
+      service => permissions if contains(var.enabled_services, service)
+    }
+
     content {
-      name = "EC2"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect   = "Allow",
-            Action   = "ec2:DescribeInstances"
-            Resource = "*",
-          }
-        ]
-      })
+      effect    = "Allow"
+      actions   = statement.value
+      resources = ["*"]
     }
   }
+}
 
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "ecs") ? [1] : []
-    content {
-      name = "ECS"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "ecs:ListServices",
-              "ecs:ListClusters",
-              "ecs:ListTagsForResource"
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "asg") ? [1] : []
-    content {
-      name = "AutoScaling"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect   = "Allow",
-            Action   = "autoscaling:DescribeAutoScalingGroups",
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "apprunner") ? [1] : []
-    content {
-      name = "AppRunner"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "apprunner:ListServices",
-              "apprunner:ListTagsForResource"
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "rds") ? [1] : []
-    content {
-      name = "RDS"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "rds:DescribeDBInstances",
-              "rds:ListTagsForResource",
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "aurora") ? [1] : []
-    content {
-      name = "Aurora"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "rds:DescribeDBClusters",
-              "rds:ListTagsForResource",
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "documentdb") ? [1] : []
-    content {
-      name = "DocumentDB"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "rds:Describe*",
-              "rds:ListTagsForResource",
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "elasticache") ? [1] : []
-    content {
-      name = "ElastiCache"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "elasticache:DescribeCacheClusters",
-              "elasticache:ListTagsForResource",
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "lambda") ? [1] : []
-    content {
-      name = "Lambda"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "lambda:ListFunctions",
-              "lambda:ListTags",
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  dynamic "inline_policy" {
-    for_each = contains(var.enabled_services, "cloudwatch") ? [1] : []
-    content {
-      name = "CloudWatch"
-      policy = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
-          {
-            Effect = "Allow",
-            Action = [
-              "cloudwatch:DescribeAlarms",
-              "cloudwatch:ListTagsForResource",
-            ],
-            Resource = "*",
-          }
-        ]
-      })
-    }
-  }
-
-  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"]
+resource "aws_iam_role_policy" "list_resources_services" {
+  name   = "ServicesAccess"
+  role   = aws_iam_role.list_resources.name
+  policy = data.aws_iam_policy_document.list_resources_services.json
 }

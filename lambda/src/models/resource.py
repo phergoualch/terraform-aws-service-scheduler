@@ -55,7 +55,9 @@ class Resource:
         Return a JSON representation of the resource to return to Step Functions.
     """
 
-    def __init__(self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None):
+    def __init__(
+        self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None
+    ):
         """
         Initialize a Resource instance.
 
@@ -81,12 +83,20 @@ class Resource:
 
         # Check if the resource should be scheduled using default schedule, and load the default schedule tags
         if self.service.schedule_without_tags:
-            self.tags.update(
-                [
-                    Tag(f"{self.service.tags_prefix}:{key}", value)
-                    for key, value in self.service.default_schedule.items()
-                ]
-            )
+            for key, value in self.service.default_schedule.items():
+                for tag in self.tags:
+                    if tag.key.split(":")[-1] == key:
+                        if tag.value == "":
+                            tag.value = value
+                else:
+                    # If the tag is not found, add it to the resource tags
+                    self.tags.add(
+                        Tag(
+                            f"{self.service.tags_prefix}:{key}",
+                            value if value is not None else "",
+                        )
+                    )
+
             # Add enabled tag to the resource if it's scheduled using default schedule, will not override if already set
             self.tags.add(Tag(f"{self.service.tags_prefix}:enabled", "true"))
 
@@ -165,7 +175,9 @@ class Resource:
             if split[-1].isdigit():
                 iterator = int(split[-1])
                 if self.service.get_tag_key("parameter", iterator=iterator) == tag.key:
-                    iterators.add(Iterator(iterator=iterator, type=IteratorType.PARAMETER))
+                    iterators.add(
+                        Iterator(iterator=iterator, type=IteratorType.PARAMETER)
+                    )
                 else:
                     iterators.add(Iterator(iterator=iterator, type=IteratorType.TAG))
             else:
@@ -232,7 +244,22 @@ class Resource:
             )
             matching_tag = next((tag for tag in self.tags if tag.key == tag_key), None)
             if matching_tag:
-                schedule_attributes[pattern["key"].replace("-", "_")] = matching_tag.value
+                key_name = pattern["key"].replace("-", "_")
+                if not matching_tag.value.strip():  # empty or whitespace
+                    builtin_default = schedule_attributes.get(key_name)
+                    if builtin_default is not None:
+                        schedule_attributes[key_name] = builtin_default
+                        logger.debug(
+                            f"Tag {tag_key} is empty, falling back to built-in default '{builtin_default}' for resource {self.id}."
+                        )
+                        continue
+
+                    logger.warning(
+                        f"Tag {tag_key} is empty and no default exists, skipping resource {self.id}."
+                    )
+                    schedule_attributes[key_name] = None
+                else:
+                    schedule_attributes[key_name] = matching_tag.value
 
         return Schedule(resource=self, **schedule_attributes)
 
@@ -246,13 +273,17 @@ class Resource:
             The iterator to use, by default None
         """
         parameter_tag = self.service.get_tag_key("parameter", iterator=iterator)
-        parameter_name = next((tag.value for tag in self.tags if tag.key == parameter_tag), None)
+        parameter_name = next(
+            (tag.value for tag in self.tags if tag.key == parameter_tag), None
+        )
 
         try:
-            tags = self.service.ssm.get_parameter(Name=parameter_name)["Parameter"]["Value"]
+            tags = self.service.ssm.get_parameter(Name=parameter_name)["Parameter"][
+                "Value"
+            ]
         except Exception as e:
             logger.warning(f"Could not load tags from parameter {parameter_tag}: {e}")
-            return
+            raise ValueError(f"Could not load tags from parameter {parameter_tag}")
 
         parameter_tags = []
 
@@ -269,7 +300,9 @@ class Resource:
                     )
                 )
             except Exception as e:
-                logger.warning(f"Could not load tag {key} from parameter {parameter_tag}: {e}")
+                logger.warning(
+                    f"Could not load tag {key} from parameter {parameter_tag}: {e}"
+                )
                 continue
 
         self.tags.update(parameter_tags)
@@ -280,9 +313,14 @@ class Resource:
         """
 
         # Disable the resource if it does not have a time tag
-        if not any(tag.key == self.service.get_tag_key("time", action=True) for tag in self.tags):
-            self.enabled = False
-            return
+        if not any(
+            tag.key == self.service.get_tag_key("time", action=True)
+            for tag in self.tags
+        ):
+            logger.warning(
+                f"Resource {self.id} does not have a time tag, the resource will be skipped."
+            )
+            raise ValueError("Resource does not have a time tag")
 
         for iterator in self.iterators:
             schedule = self.get_schedule_from_tags(iterator=iterator.iterator)
@@ -330,7 +368,9 @@ class Resource:
             "id": self.id,
             "attributes": self.attributes,
             "nextExecutionTime": (
-                self.next_execution_time.isoformat() if self.next_execution_time else None
+                self.next_execution_time.isoformat()
+                if self.next_execution_time
+                else None
             ),
             "ttl": (
                 str(int((self.next_execution_time + timedelta(days=365)).timestamp()))

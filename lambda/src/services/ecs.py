@@ -29,10 +29,14 @@ class ECS(Service):
             for cluster_page in clusters_paginator.paginate():
                 for cluster_arn in cluster_page["clusterArns"]:
                     services_paginator = self.client.get_paginator("list_services")
-                    for service_page in services_paginator.paginate(cluster=cluster_arn):
+                    for service_page in services_paginator.paginate(
+                        cluster=cluster_arn
+                    ):
                         for service_arn in service_page["serviceArns"]:
                             try:
-                                tags = self.client.list_tags_for_resource(resourceArn=service_arn)
+                                tags = self.client.list_tags_for_resource(
+                                    resourceArn=service_arn
+                                )
                             except Exception as e:
                                 logger.warning(
                                     f"Error listing tags for ECS service {service_arn}: {e}"
@@ -44,7 +48,10 @@ class ECS(Service):
                                     id_=service_arn,
                                     service=self,
                                     tags=set(
-                                        [Tag(tag["key"], tag["value"]) for tag in tags["tags"]]
+                                        [
+                                            Tag(tag["key"], tag["value"])
+                                            for tag in tags.get("tags", [])
+                                        ]
                                     ),
                                     attributes={
                                         "cluster": cluster_arn.split("/")[-1],

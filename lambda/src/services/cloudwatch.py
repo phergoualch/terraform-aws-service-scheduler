@@ -26,10 +26,14 @@ class Cloudwatch(Service):
         logger.info("Listing Cloudwatch alarms")
 
         try:
-            for page in paginator.paginate(AlarmTypes=["CompositeAlarm", "MetricAlarm"]):
+            for page in paginator.paginate(
+                AlarmTypes=["CompositeAlarm", "MetricAlarm"]
+            ):
                 for alarm in page["MetricAlarms"] + page["CompositeAlarms"]:
                     try:
-                        tags = self.client.list_tags_for_resource(ResourceARN=alarm["AlarmArn"])
+                        tags = self.client.list_tags_for_resource(
+                            ResourceARN=alarm["AlarmArn"]
+                        )
                     except Exception as e:
                         logger.warning(
                             f"Error listing tags for Cloudwatch alarm {alarm['AlarmArn']}: {e}"
@@ -40,7 +44,12 @@ class Cloudwatch(Service):
                         Resource(
                             id_=alarm["AlarmArn"],
                             service=self,
-                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["Tags"]]),
+                            tags=set(
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags.get("Tags", [])
+                                ]
+                            ),
                             attributes={"name": alarm["AlarmName"]},
                         )
                     )

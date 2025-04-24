@@ -26,14 +26,21 @@ class ASG(Service):
 
         try:
             for page in paginator.paginate(
-                Filters=[{"Name": f"tag:{self.get_tag_key('enabled')}", "Values": ["true"]}]
+                Filters=[
+                    {"Name": f"tag:{self.get_tag_key('enabled')}", "Values": ["true"]}
+                ]
             ):
                 for group in page["AutoScalingGroups"]:
                     resources.append(
                         Resource(
                             id_=group["AutoScalingGroupARN"],
                             service=self,
-                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in group["Tags"]]),
+                            tags=set(
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in group.get("Tags", [])
+                                ]
+                            ),
                             attributes={"name": group["AutoScalingGroupName"]},
                         )
                     )

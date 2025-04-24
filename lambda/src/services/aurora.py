@@ -27,7 +27,9 @@ class Aurora(Service):
 
         try:
             for page in paginator.paginate(
-                Filters=[{"Name": "engine", "Values": ["aurora-postgresql", "aurora-mysql"]}]
+                Filters=[
+                    {"Name": "engine", "Values": ["aurora-postgresql", "aurora-mysql"]}
+                ]
             ):
                 for cluster in page["DBClusters"]:
                     try:
@@ -44,7 +46,12 @@ class Aurora(Service):
                         Resource(
                             id_=cluster["DBClusterArn"],
                             service=self,
-                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
+                            tags=set(
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags.get("TagList", [])
+                                ]
+                            ),
                             attributes={"name": cluster["DBClusterIdentifier"]},
                         )
                     )

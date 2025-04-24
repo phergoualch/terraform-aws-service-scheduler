@@ -32,12 +32,15 @@ class Elasticache(Service):
                         account_id = self.sts.get_caller_identity()["Account"]
                         region = self.client.meta.region_name
                         cluster_arn = f"arn:aws:elasticache:{region}:{account_id}:cluster:{cluster['CacheClusterId']}"
-                        tags = self.client.list_tags_for_resource(ResourceName=cluster_arn)
+                        tags = self.client.list_tags_for_resource(
+                            ResourceName=cluster_arn
+                        )
 
                         target_node_type = [
                             tag["Value"]
                             for tag in tags["TagList"]
-                            if tag["Key"] == self.get_tag_key("node-type", action=self.action)
+                            if tag["Key"]
+                            == self.get_tag_key("node-type", action=self.action)
                         ][0]
                     except Exception as e:
                         logger.warning(
@@ -49,7 +52,12 @@ class Elasticache(Service):
                         Resource(
                             id_=cluster_arn,
                             service=self,
-                            tags=set([Tag(tag["Key"], tag["Value"]) for tag in tags["TagList"]]),
+                            tags=set(
+                                [
+                                    Tag(tag["Key"], tag["Value"])
+                                    for tag in tags.get("TagList", [])
+                                ]
+                            ),
                             attributes={
                                 "id": cluster["CacheClusterId"],
                                 "nodeType": target_node_type,
