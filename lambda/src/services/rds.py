@@ -1,18 +1,16 @@
 import logging
-from typing import Dict, List
 
-from models import Resource, Tag, Service
+from models import Resource, Service, Tag
 from models.enums import Action
-
 
 logger = logging.getLogger(__name__)
 
 
 class RDS(Service):
-    def __init__(self, action: Action, parameters: Dict = None):
+    def __init__(self, action: Action, parameters: dict | None = None):
         super().__init__("rds", action, parameters)
 
-    def list_resources(self) -> List[Resource]:
+    def list_resources(self) -> list[Resource]:
         """
         Get all RDS instances in the account and return them as a list of Resource objects.
 
@@ -42,12 +40,10 @@ class RDS(Service):
                         Resource(
                             id_=instance["DBInstanceArn"],
                             service=self,
-                            tags=set(
-                                [
-                                    Tag(tag["Key"], tag["Value"])
-                                    for tag in tags.get("TagList", [])
-                                ]
-                            ),
+                            tags={
+                                Tag(tag["Key"], tag["Value"])
+                                for tag in tags.get("TagList", [])
+                            },
                             attributes={"name": instance["DBInstanceIdentifier"]},
                         )
                     )

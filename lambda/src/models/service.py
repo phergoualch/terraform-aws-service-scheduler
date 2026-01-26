@@ -1,10 +1,10 @@
-import os
 from datetime import datetime
-from dateutil import tz
-from typing import Dict
 import json
+import os
 
 import boto3
+from dateutil import tz
+
 from models.enums import Action
 
 
@@ -35,8 +35,8 @@ class Service:
         self,
         name: str,
         action: Action,
-        parameters: Dict = None,
-        client_name: str = None,
+        parameters: dict | None = None,
+        client_name: str | None = None,
     ):
         """
         Initialize a Service instance.
@@ -91,7 +91,9 @@ class Service:
         """
         return f"Service(name={self.name}, action={self.action})"
 
-    def get_tag_key(self, tag_name: str, action: bool = False, iterator: int = None):
+    def get_tag_key(
+        self, tag_name: str, action: bool = False, iterator: int | None = None
+    ):
         """
         Get the tag key from the tag mapping.
 
@@ -111,11 +113,10 @@ class Service:
         """
         if action and iterator:
             return f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}:{iterator}"
-        elif action:
+        if action:
             return (
                 f"{self.tags_prefix}:{self.action.value}-{self.tags_mapping[tag_name]}"
             )
-        elif iterator:
+        if iterator:
             return f"{self.tags_prefix}:{self.tags_mapping[tag_name]}:{iterator}"
-        else:
-            return f"{self.tags_prefix}:{self.tags_mapping[tag_name]}"
+        return f"{self.tags_prefix}:{self.tags_mapping[tag_name]}"

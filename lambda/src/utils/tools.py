@@ -1,13 +1,12 @@
 from enum import Enum
 import logging
-from typing import Set
 
 from models.tag import Tag
 
 logger = logging.getLogger(__name__)
 
 
-def is_in_range(value: str, range_value: str, range_enum: Enum = None):
+def is_in_range(value: str, range_value: str, range_enum: Enum | None = None):
     """
     Check if a given value is in a given range.
 
@@ -42,9 +41,8 @@ def is_in_range(value: str, range_value: str, range_enum: Enum = None):
             if int(start) <= int(end):
                 if int(start) <= int(target) <= int(end):
                     return True
-            else:
-                if int(start) <= int(target) or int(target) <= int(end):
-                    return True
+            elif int(start) <= int(target) or int(target) <= int(end):
+                return True
         else:
             if range_enum:
                 part = range_enum[part].value
@@ -55,7 +53,7 @@ def is_in_range(value: str, range_value: str, range_enum: Enum = None):
     return False
 
 
-def check_selector_tags(tags: Set[Tag], selector: str) -> bool:
+def check_selector_tags(tags: set[Tag], selector: str) -> bool:
     """
     Check if the selector tags are present in the resource tags.
 

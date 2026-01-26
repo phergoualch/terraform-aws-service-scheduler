@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
-from dateutil import tz
 import logging
+
+from dateutil import tz
 
 from models.enums import Day, Month
 from models.resource import Resource
@@ -41,7 +42,15 @@ class Schedule:
     --------
     Creating a Schedule instance:
 
-    >>> schedule = Schedule(resource=my_resource, time="08:00", timezone="UTC", active_days="MON-FRI", active_days_of_month="1-31", active_weeks="1-53", active_months="JAN-DEC")
+    >>> schedule = Schedule(
+    ...     resource=my_resource,
+    ...     time="08:00",
+    ...     timezone="UTC",
+    ...     active_days="MON-FRI",
+    ...     active_days_of_month="1-31",
+    ...     active_weeks="1-53",
+    ...     active_months="JAN-DEC",
+    ... )
 
     Getting the next execution time:
 
@@ -136,17 +145,15 @@ class Schedule:
                     scheduled_time.strftime("%a").upper(),
                     self.active_days,
                     range_enum=Day,
-                ):
-                    if is_in_range(scheduled_time.day, self.active_days_of_month):
-                        if is_in_range(
-                            str(int(scheduled_time.strftime("%U")) + 1),
-                            self.active_weeks,
-                        ):
-                            if is_in_range(
-                                scheduled_time.strftime("%b").upper(),
-                                self.active_months,
-                                range_enum=Month,
-                            ):
-                                return scheduled_time
+                ) and is_in_range(scheduled_time.day, self.active_days_of_month):
+                    if is_in_range(
+                        str(int(scheduled_time.strftime("%U")) + 1),
+                        self.active_weeks,
+                    ) and is_in_range(
+                        scheduled_time.strftime("%b").upper(),
+                        self.active_months,
+                        range_enum=Month,
+                    ):
+                        return scheduled_time
 
         return None

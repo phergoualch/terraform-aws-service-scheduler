@@ -1,12 +1,12 @@
-from typing import Dict, List, Set
 from datetime import timedelta
-from dateutil import tz
 import json
 import logging
 
+from dateutil import tz
+
+from models.iterator import Iterator, IteratorType
 from models.service import Service
 from models.tag import Tag
-from models.iterator import Iterator, IteratorType
 from utils.tools import check_selector_tags
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ class Resource:
     """
 
     def __init__(
-        self, id_: str, service: Service, tags: Set[Tag], attributes: Dict = None
+        self, id_: str, service: Service, tags: set[Tag], attributes: dict | None = None
     ):
         """
         Initialize a Resource instance.
@@ -88,14 +88,13 @@ class Resource:
                     if tag.key.split(":")[-1] == key:
                         if tag.value == "":
                             tag.value = value
-                else:
-                    # If the tag is not found, add it to the resource tags
-                    self.tags.add(
-                        Tag(
-                            f"{self.service.tags_prefix}:{key}",
-                            value if value is not None else "",
-                        )
+                # If the tag is not found, add it to the resource tags
+                self.tags.add(
+                    Tag(
+                        f"{self.service.tags_prefix}:{key}",
+                        value if value is not None else "",
                     )
+                )
 
             # Add enabled tag to the resource if it's scheduled using default schedule, will not override if already set
             self.tags.add(Tag(f"{self.service.tags_prefix}:enabled", "true"))
@@ -187,9 +186,9 @@ class Resource:
                     else Iterator(iterator=None, type=IteratorType.TAG)
                 )
 
-        self.iterators = sorted(list(iterators))
+        self.iterators = sorted(iterators)
 
-    def get_schedule_from_tags(self, iterator: int = None):
+    def get_schedule_from_tags(self, iterator: int | None = None):
         """
         Get the resource scheduler values from the resource tags.
 
@@ -263,7 +262,7 @@ class Resource:
 
         return Schedule(resource=self, **schedule_attributes)
 
-    def load_tags_from_parameter(self, iterator: int = None):
+    def load_tags_from_parameter(self, iterator: int | None = None):
         """
         Load the resource tags from the parameter store parameter.
 
@@ -283,7 +282,8 @@ class Resource:
             ]
         except Exception as e:
             logger.warning(f"Could not load tags from parameter {parameter_tag}: {e}")
-            raise ValueError(f"Could not load tags from parameter {parameter_tag}")
+            msg = f"Could not load tags from parameter {parameter_tag}"
+            raise ValueError(msg)
 
         parameter_tags = []
 
@@ -320,7 +320,8 @@ class Resource:
             logger.warning(
                 f"Resource {self.id} does not have a time tag, the resource will be skipped."
             )
-            raise ValueError("Resource does not have a time tag")
+            msg = "Resource does not have a time tag"
+            raise ValueError(msg)
 
         for iterator in self.iterators:
             schedule = self.get_schedule_from_tags(iterator=iterator.iterator)
@@ -328,7 +329,7 @@ class Resource:
             if next_execution_time:
                 self.next_execution_time = next_execution_time
 
-    def get_next_execution_time_manual(self, selectors: List[Dict]):
+    def get_next_execution_time_manual(self, selectors: list[dict]):
         """
         Calculate and set the next scheduled execution time manually based on selector conditions.
 

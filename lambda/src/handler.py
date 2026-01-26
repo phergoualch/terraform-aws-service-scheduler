@@ -1,19 +1,19 @@
 import logging
 
+from models import Service
+from models.enums import Action
 from services import (
     ASG,
     EC2,
-    AppRunner,
-    DocumentDB,
-    RDS,
-    Aurora,
     ECS,
-    Lambda,
-    Elasticache,
+    RDS,
+    AppRunner,
+    Aurora,
     Cloudwatch,
+    DocumentDB,
+    Elasticache,
+    Lambda,
 )
-from models import Service
-from models.enums import Action
 
 logger = logging.getLogger("handler")
 
@@ -92,7 +92,7 @@ def handler(event, context):
                 else:
                     logger.info(f"No {service.action.value} time for {resource.id}")
         except Exception as e:
-            logger.error(f"Error processing resource {resource.id}: {str(e)}")
+            logger.error(f"Error processing resource {resource.id}: {e!s}")
 
     return [
         resource.to_json()

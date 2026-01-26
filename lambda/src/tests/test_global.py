@@ -1,10 +1,12 @@
+from datetime import timedelta
+
+from dateutil import tz
 import pytest
-from services import EC2
+
 from models import Resource, Tag
 from models.enums import Action
+from services import EC2
 from utils.tools import check_selector_tags
-from datetime import timedelta
-from dateutil import tz
 
 
 @pytest.fixture
@@ -28,25 +30,21 @@ def service():
         "default_timezone": "UTC",
         "interval": "6",
     }
-    service = EC2(action, parameters)
-    return service
+    return EC2(action, parameters)
 
 
 @pytest.fixture
 def resource(service):
-    resource = Resource(
+    return Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("scheduler:start-time", "10:00"),
-                Tag("scheduler:timezone", "UTC"),
-            ]
-        ),
+        tags={
+            Tag("scheduler:enabled", "true"),
+            Tag("scheduler:start-time", "10:00"),
+            Tag("scheduler:timezone", "UTC"),
+        },
         attributes={"id": "id"},
     )
-    return resource
 
 
 def test_tag():
@@ -78,7 +76,7 @@ def test_service(service):
 
 def test_resource(resource):
     assert resource.id == "arn"
-    assert all([isinstance(tag, Tag) for tag in resource.tags])
+    assert all(isinstance(tag, Tag) for tag in resource.tags)
     assert resource.attributes == {"id": "id"}
 
 
@@ -103,19 +101,16 @@ def test_get_tag_key(service):
 
 @pytest.fixture
 def resource1(service):
-    resource = Resource(
+    return Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("application", "app1"),
-                Tag("environment", "dev"),
-                Tag("team", "team1"),
-            ]
-        ),
+        tags={
+            Tag("scheduler:enabled", "true"),
+            Tag("application", "app1"),
+            Tag("environment", "dev"),
+            Tag("team", "team1"),
+        },
     )
-    return resource
 
 
 @pytest.mark.parametrize("delay", [0, 5, 10])
@@ -130,23 +125,20 @@ def test_manual_delay(delay, resource):
 
 @pytest.fixture
 def resource2(service):
-    resource = Resource(
+    return Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("application", "app2"),
-                Tag("environment", "prod"),
-                Tag("team", "team1"),
-            ]
-        ),
+        tags={
+            Tag("scheduler:enabled", "true"),
+            Tag("application", "app2"),
+            Tag("environment", "prod"),
+            Tag("team", "team1"),
+        },
     )
-    return resource
 
 
 @pytest.mark.parametrize(
-    "selector, expected",
+    ("selector", "expected"),
     [
         ("all", [True, True]),
         ("any", [False, False]),
