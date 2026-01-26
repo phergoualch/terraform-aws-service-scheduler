@@ -1,6 +1,6 @@
 site_name: AWS Service Scheduler
 site_description: AWS Service Scheduler, a Terraform module to schedule your AWS resources easily.
-site_url: https://scheduler.pereg.cloud/
+site_url: https://scheduler.pereg.dev/
 theme:
   name: material
   logo: img/cloud.svg
