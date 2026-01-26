@@ -1,7 +1,7 @@
 data "aws_region" "current" {}
 
 locals {
-  region            = data.aws_region.current.name
+  region            = data.aws_region.current.region
   region_short_name = format("%s%s%s", split("-", local.region)[0], substr(split("-", local.region)[1], 0, 1), split("-", local.region)[2])
 }
 
@@ -47,7 +47,7 @@ resource "aws_ssm_document" "manual" {
         "isEnd" : true,
         "inputs" : {
           "input" : "{\"selectors\": [{\"tags\": \"{{ tags }}\", \"services\": \"{{ services }}\", \"delay\": {{ delay }} }]}",
-          "stateMachineArn" : "arn:aws:states:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.app_name}-{{ action }}"
+          "stateMachineArn" : "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.app_name}-{{ action }}"
         }
       }
     ]

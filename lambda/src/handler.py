@@ -13,6 +13,10 @@ from services import (
     DocumentDB,
     Elasticache,
     Lambda,
+    Neptune,
+    Redshift,
+    SageMakerEndpoint,
+    SageMakerNotebook,
 )
 
 logger = logging.getLogger("handler")
@@ -45,6 +49,10 @@ def ServiceFactory(service: str, action: Action) -> Service:
         "lambda": Lambda,
         "elasticache": Elasticache,
         "cloudwatch": Cloudwatch,
+        "neptune": Neptune,
+        "redshift": Redshift,
+        "sagemaker-endpoint": SageMakerEndpoint,
+        "sagemaker-notebook": SageMakerNotebook,
     }
 
     return services[service](action)

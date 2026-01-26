@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesNeptune",
+  "States": {
+    "ListResourcesNeptune": {
+      "Next": "ResourceMapNeptune",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "neptune"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapNeptune": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitNeptune",
+        "States": {
+          "ErrorCatcherNeptune": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StartNeptune": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherNeptune"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "DbClusterIdentifier.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:neptune:startDBCluster",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitNeptune": {
+            "Next": "StartNeptune",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

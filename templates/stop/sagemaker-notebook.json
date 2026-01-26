@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesSageMakerNotebook",
+  "States": {
+    "ListResourcesSageMakerNotebook": {
+      "Next": "ResourceMapSageMakerNotebook",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "sagemaker-notebook"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapSageMakerNotebook": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitSageMakerNotebook",
+        "States": {
+          "ErrorCatcherSageMakerNotebook": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "StopNotebookSageMaker": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherSageMakerNotebook"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "NotebookInstanceName.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:sagemaker:stopNotebookInstance",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitSageMakerNotebook": {
+            "Next": "StopNotebookSageMaker",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

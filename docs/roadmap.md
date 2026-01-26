@@ -5,18 +5,6 @@ hide:
 
 ## More supported services
 
-### Redshift
-
-Add support for Redshift clusters. The scheduler will be able to start and stop Redshift clusters using the `PauseCluster` and `ResumeCluster` API calls.
-
-### SageMaker Notebooks
-
-Add support for SageMaker Notebooks. The scheduler will be able to start and stop SageMaker Notebooks using the `StartNotebookInstance` and `StopNotebookInstance` API calls.
-
-### Neptune
-
-Add support for Neptune clusters. The scheduler will be able to start and stop Neptune clusters using the `StopDBCluster` and `StartDBCluster` API calls.
-
 ### MQ
 
 Add support for Amazon MQ brokers. The scheduler will be able to restart Amazon MQ brokers using the `ModifyBroker` API call.

@@ -7,7 +7,11 @@ from services.documentdb import DocumentDB
 from services.ec2 import EC2
 from services.ecs import ECS
 from services.elasticache import Elasticache
+from services.neptune import Neptune
 from services.rds import RDS
+from services.redshift import Redshift
+from services.sagemaker_endpoint import SageMakerEndpoint
+from services.sagemaker_notebook import SageMakerNotebook
 
 __all__ = [
     "ASG",
@@ -20,4 +24,8 @@ __all__ = [
     "DocumentDB",
     "Elasticache",
     "Lambda",
+    "Neptune",
+    "Redshift",
+    "SageMakerEndpoint",
+    "SageMakerNotebook",
 ]

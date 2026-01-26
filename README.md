@@ -17,7 +17,7 @@ module "service_scheduler" {
   source = "phergoualch/service-scheduler/aws"
   version = ">= 2.0.0"
 
-  enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"]
+  enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch", "sagemaker-endpoint", "sagemaker-notebook", "neptune", "redshift"]
   default_timezone   = "Europe/Paris"
   app_name           = "service-scheduler"
   execution_interval = 6

@@ -1,0 +1,144 @@
+{
+  "StartAt": "ListResourcesSageMakerEndpoint",
+  "States": {
+    "ListResourcesSageMakerEndpoint": {
+      "Next": "ResourceMapSageMakerEndpoint",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "sagemaker-endpoint"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapSageMakerEndpoint": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitSageMakerEndpoint",
+        "States": {
+          "ErrorCatcherSageMakerEndpoint": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "GetEndpointConfig": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherSageMakerEndpoint"
+              }
+            ],
+            "Next": "StopSageMakerEndpoint",
+            "Parameters": {
+              "EndpointName.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:sagemaker:describeEndpoint",
+            "ResultPath": "$.endpointDetails",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "SaveEndpointState": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherSageMakerEndpoint"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "Item": {
+                "id": {
+                  "S.$": "$.id"
+                },
+                "instanceCount": {
+                  "N.$": "States.Format('{}', $.endpointDetails.ProductionVariants[0].CurrentInstanceCount)"
+                }
+              },
+              "TableName": "${dynamodb_table_name}"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:dynamodb:putItem",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "StopSageMakerEndpoint": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherSageMakerEndpoint"
+              }
+            ],
+            "Next": "SaveEndpointState",
+            "Parameters": {
+              "DesiredWeightsAndCapacities": [
+                {
+                  "DesiredInstanceCount": 0,
+                  "VariantName.$": "$.endpointDetails.ProductionVariants[0].VariantName"
+                }
+              ],
+              "EndpointName.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:sagemaker:updateEndpointWeightsAndCapacities",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitSageMakerEndpoint": {
+            "Next": "GetEndpointConfig",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}
