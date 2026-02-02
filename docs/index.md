@@ -23,7 +23,7 @@ The key features are:
 ``` tf
 module "service_scheduler" {
   source = "phergoualch/service-scheduler/aws"
-  version = ">= 2.0.0"
+  version = ">= 2.2.0"
 
   enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch", "sagemaker-endpoint", "sagemaker-notebook", "neptune", "redshift"] #(1)!
   default_timezone   = "Europe/Paris" #(2)!

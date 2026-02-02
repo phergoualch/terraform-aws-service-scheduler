@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0](https://github.com/phergoualch/terraform-aws-service-scheduler/compare/v2.1.1...v2.2.0) (2026-02-02)
+
+### Features
+
+* add support for sagemaker, neptune and redshift ([e6bd9c3](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/e6bd9c3d737ca59f99267bedfdbf50a5946a430d))
+* update releaserc to manage version in README and docs ([7379269](https://github.com/phergoualch/terraform-aws-service-scheduler/commit/73792694a2a060a0f8267ebf952d751126535aa2))
+
 ## [2.1.1](https://github.com/phergoualch/terraform-aws-service-scheduler/compare/v2.1.0...v2.1.1) (2025-04-24)
 
 ### Bug Fixes

@@ -14,7 +14,7 @@ To deploy it on your account, simply add the following code to your Terraform co
 ``` tf
 module "service_scheduler" {
   source = "phergoualch/service-scheduler/aws"
-  version = ">= 2.0.0"
+  version = ">= 2.2.0"
 
   enabled_services   =  ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache"]
   default_timezone   = "Europe/Paris"
@@ -47,7 +47,7 @@ Here is an example of how to deploy the scheduler in `eu-west-1` and `eu-west-3`
 ``` tf
 module "service_scheduler_euw1" {
   source = "phergoualch/service-scheduler/aws"
-  version = ">= 2.0.0"
+  version = ">= 2.2.0"
 
   providers = {
     aws = aws.eu-west-1
@@ -62,7 +62,7 @@ module "service_scheduler_euw1" {
 
 module "service_scheduler_euw3" {
   source = "phergoualch/service-scheduler/aws"
-  version = ">= 2.0.0"
+  version = ">= 2.2.0"
 
   providers = {
     aws = aws.eu-west-3
