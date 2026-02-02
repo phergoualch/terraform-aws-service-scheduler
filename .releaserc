@@ -33,6 +33,48 @@
               }
             ],
             "countMatches": true
+          },
+          {
+            "files": ["README.md"],
+            "from": "version = \">= .*\"",
+            "to": "version = \">= ${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "README.md",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          },
+          {
+            "files": ["docs/index.md"],
+            "from": "version = \">= .*\"",
+            "to": "version = \">= ${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "docs/index.md",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          },
+          {
+            "files": ["docs/usage/installation.md"],
+            "from": "version = \">= .*\"",
+            "to": "version = \">= ${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "docs/usage/installation.md",
+                "hasChanged": true,
+                "numMatches": 3,
+                "numReplacements": 3
+              }
+            ],
+            "countMatches": true
           }
         ]
       }
@@ -56,7 +98,10 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "pyproject.toml"
+          "pyproject.toml",
+          "README.md",
+          "docs/index.md",
+          "docs/usage/installation.md"
         ],
         "message": "chore(release): version ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
