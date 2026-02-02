@@ -10,8 +10,8 @@ variable "enabled_services" {
   default     = ["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"]
 
   validation {
-    condition     = !contains([for s in var.enabled_services : contains(["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch"], s)], false)
-    error_message = "The list of enabled services must be a subset of [\"ec2\", \"asg\", \"ecs\", \"rds\", \"documentdb\", \"lambda\", \"apprunner\", \"aurora\", \"elasticache\", \"cloudwatch\"]"
+    condition     = !contains([for s in var.enabled_services : contains(["ec2", "asg", "ecs", "rds", "documentdb", "lambda", "apprunner", "aurora", "elasticache", "cloudwatch", "sagemaker-endpoint", "sagemaker-notebook", "neptune", "redshift"], s)], false)
+    error_message = "The list of enabled services must be a subset of [\"ec2\", \"asg\", \"ecs\", \"rds\", \"documentdb\", \"lambda\", \"apprunner\", \"aurora\", \"elasticache\", \"cloudwatch\", \"sagemaker-endpoint\", \"sagemaker-notebook\", \"neptune\", \"redshift\"]"
   }
 }
 

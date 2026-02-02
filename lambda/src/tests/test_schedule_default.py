@@ -1,7 +1,8 @@
 import pytest
-from services import EC2
-from models.enums import Action
+
 from models import Resource, Tag
+from models.enums import Action
+from services import EC2
 
 
 @pytest.fixture
@@ -31,22 +32,19 @@ def service():
             "active-days": "MON-FRI",
         },
     }
-    service = EC2(action, parameters)
-    return service
+    return EC2(action, parameters)
 
 
 @pytest.fixture
 def resource(service):
-    resource = Resource(id_="arn", service=service, tags=set([]))
-    return resource
+    return Resource(id_="arn", service=service, tags=set())
 
 
 @pytest.fixture
 def resource_overwrite(service):
-    resource = Resource(
-        id_="arn", service=service, tags=set([Tag("scheduler:start-time", "10:00")])
+    return Resource(
+        id_="arn", service=service, tags={Tag("scheduler:start-time", "10:00")}
     )
-    return resource
 
 
 def test_schedule(resource):
@@ -66,12 +64,10 @@ def test_empty_tag_value_fallback_to_default(service):
     resource = Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("scheduler:start-time", ""),
-            ]
-        ),
+        tags={
+            Tag("scheduler:enabled", "true"),
+            Tag("scheduler:start-time", ""),
+        },
     )
     schedule = resource.get_schedule_from_tags()
     assert schedule.time == service.default_schedule["start-time"]
@@ -83,7 +79,7 @@ def test_missing_tags_fallback_to_defaults(service):
     resource = Resource(
         id_="arn",
         service=service,
-        tags=set([Tag("scheduler:enabled", "true")]),
+        tags={Tag("scheduler:enabled", "true")},
     )
     schedule = resource.get_schedule_from_tags()
     assert schedule.time == service.default_schedule["start-time"]

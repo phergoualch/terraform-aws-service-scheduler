@@ -1,7 +1,7 @@
 resource "aws_cloudwatch_event_rule" "this" {
   name                = var.app_name
-  description         = "Trigger ${var.app_name} state machines every ${var.execution_interval} hours"
-  schedule_expression = "rate(${var.execution_interval} hours)"
+  description         = "Trigger ${var.app_name} state machines every ${var.execution_interval} ${var.execution_interval == 1 ? "hour" : "hours"}"
+  schedule_expression = "rate(${var.execution_interval} ${var.execution_interval == 1 ? "hour" : "hours"})"
 }
 
 resource "aws_cloudwatch_event_target" "main" {

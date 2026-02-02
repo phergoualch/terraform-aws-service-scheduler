@@ -1,18 +1,16 @@
 import logging
-from typing import Dict, List
 
-from models import Resource, Tag, Service
+from models import Resource, Service, Tag
 from models.enums import Action
-
 
 logger = logging.getLogger(__name__)
 
 
 class Elasticache(Service):
-    def __init__(self, action: Action, parameters: Dict = None):
+    def __init__(self, action: Action, parameters: dict | None = None):
         super().__init__("elasticache", action, parameters)
 
-    def list_resources(self) -> List[Resource]:
+    def list_resources(self) -> list[Resource]:
         """
         Get all Elasticache clusters in the account and return them as a list of Resource objects.
 
@@ -36,12 +34,12 @@ class Elasticache(Service):
                             ResourceName=cluster_arn
                         )
 
-                        target_node_type = [
+                        target_node_type = next(
                             tag["Value"]
                             for tag in tags["TagList"]
                             if tag["Key"]
                             == self.get_tag_key("node-type", action=self.action)
-                        ][0]
+                        )
                     except Exception as e:
                         logger.warning(
                             f"Error listing tags for Elasticache cluster {cluster['CacheClusterId']}: {e}"
@@ -52,12 +50,10 @@ class Elasticache(Service):
                         Resource(
                             id_=cluster_arn,
                             service=self,
-                            tags=set(
-                                [
-                                    Tag(tag["Key"], tag["Value"])
-                                    for tag in tags.get("TagList", [])
-                                ]
-                            ),
+                            tags={
+                                Tag(tag["Key"], tag["Value"])
+                                for tag in tags.get("TagList", [])
+                            },
                             attributes={
                                 "id": cluster["CacheClusterId"],
                                 "nodeType": target_node_type,

@@ -109,7 +109,6 @@ class Iterator:
         """
         if self.iterator is None:
             return True
-        elif other.iterator is None:
+        if other.iterator is None:
             return False
-        else:
-            return self.iterator < other.iterator
+        return self.iterator < other.iterator

@@ -1,31 +1,28 @@
 # ruff: noqa: F811
 from datetime import datetime
 
-import pytest
 from dateutil import tz
-from models import Resource, Tag
-from models.enums import Day, Month, Action
-from utils.tools import is_in_range
+import pytest
 
+from models import Resource, Tag
+from models.enums import Action, Day, Month
 from tests.test_global import service  # noqa: F401
+from utils.tools import is_in_range
 
 
 @pytest.fixture
 def resource(service):
-    resource = Resource(
+    return Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("scheduler:start-time", "10:00"),
-                Tag("scheduler:timezone", "UTC"),
-                Tag("app", "test"),
-            ]
-        ),
+        tags={
+            Tag("scheduler:enabled", "true"),
+            Tag("scheduler:start-time", "10:00"),
+            Tag("scheduler:timezone", "UTC"),
+            Tag("app", "test"),
+        },
         attributes={"id": "id"},
     )
-    return resource
 
 
 def test_schedule(resource):
@@ -70,14 +67,12 @@ def test_get_next_execution_time_next_day(service):
     resource = Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:enabled", "true"),
-                Tag("scheduler:start-time", "03:00"),
-                Tag("scheduler:timezone", "UTC"),
-                Tag("scheduler:active-days", "WED-FRI, SAT"),
-            ]
-        ),
+        tags={
+            Tag("scheduler:enabled", "true"),
+            Tag("scheduler:start-time", "03:00"),
+            Tag("scheduler:timezone", "UTC"),
+            Tag("scheduler:active-days", "WED-FRI, SAT"),
+        },
     )
     resource.service.now = datetime(2024, 1, 26, 22, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()
@@ -168,13 +163,11 @@ def test_ignore_empty_time(service):
     resource = Resource(
         id_="arn",
         service=service,
-        tags=set(
-            [
-                Tag("scheduler:start-time", ""),
-                Tag("scheduler:timezone", "UTC"),
-                Tag("scheduler:active-days", "WED-FRI, SAT"),
-            ]
-        ),
+        tags={
+            Tag("scheduler:start-time", ""),
+            Tag("scheduler:timezone", "UTC"),
+            Tag("scheduler:active-days", "WED-FRI, SAT"),
+        },
     )
     resource.service.now = datetime(2024, 1, 26, 22, 0, 0, tzinfo=tz.gettz("UTC"))
     schedule = resource.get_schedule_from_tags()

@@ -1,17 +1,16 @@
 import logging
-from typing import Dict, List
 
-from models import Resource, Tag, Service
+from models import Resource, Service, Tag
 from models.enums import Action
 
 logger = logging.getLogger(__name__)
 
 
 class ASG(Service):
-    def __init__(self, action: Action, parameters: Dict = None):
+    def __init__(self, action: Action, parameters: dict | None = None):
         super().__init__("asg", action, parameters, "autoscaling")
 
-    def list_resources(self) -> List[Resource]:
+    def list_resources(self) -> list[Resource]:
         """
         Get all Autoscaling Groups in the account and return them as a list of Resource objects.
 
@@ -35,12 +34,10 @@ class ASG(Service):
                         Resource(
                             id_=group["AutoScalingGroupARN"],
                             service=self,
-                            tags=set(
-                                [
-                                    Tag(tag["Key"], tag["Value"])
-                                    for tag in group.get("Tags", [])
-                                ]
-                            ),
+                            tags={
+                                Tag(tag["Key"], tag["Value"])
+                                for tag in group.get("Tags", [])
+                            },
                             attributes={"name": group["AutoScalingGroupName"]},
                         )
                     )

@@ -1,18 +1,16 @@
 import logging
-from typing import Dict, List
 
-from models import Resource, Tag, Service
+from models import Resource, Service, Tag
 from models.enums import Action
-
 
 logger = logging.getLogger(__name__)
 
 
 class ECS(Service):
-    def __init__(self, action: Action, parameters: Dict = None):
+    def __init__(self, action: Action, parameters: dict | None = None):
         super().__init__("ecs", action, parameters)
 
-    def list_resources(self) -> List[Resource]:
+    def list_resources(self) -> list[Resource]:
         """
         Get all ECS services in the account and return them as a list of Resource objects.
 
@@ -47,12 +45,10 @@ class ECS(Service):
                                 Resource(
                                     id_=service_arn,
                                     service=self,
-                                    tags=set(
-                                        [
-                                            Tag(tag["key"], tag["value"])
-                                            for tag in tags.get("tags", [])
-                                        ]
-                                    ),
+                                    tags={
+                                        Tag(tag["key"], tag["value"])
+                                        for tag in tags.get("tags", [])
+                                    },
                                     attributes={
                                         "cluster": cluster_arn.split("/")[-1],
                                         "service": service_arn.split("/")[-1],

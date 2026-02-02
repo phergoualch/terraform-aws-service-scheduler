@@ -1,5 +1,5 @@
 locals {
-  create_dynamodb = contains(var.enabled_services, "asg") || contains(var.enabled_services, "ecs")
+  create_dynamodb = contains(var.enabled_services, "asg") || contains(var.enabled_services, "ecs") || contains(var.enabled_services, "sagemaker-endpoint")
 }
 
 resource "aws_dynamodb_table" "this" {

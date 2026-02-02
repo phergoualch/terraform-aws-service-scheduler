@@ -6,52 +6,52 @@ from models.enums import Action
 logger = logging.getLogger(__name__)
 
 
-class RDS(Service):
+class SageMakerEndpoint(Service):
     def __init__(self, action: Action, parameters: dict | None = None):
-        super().__init__("rds", action, parameters)
+        super().__init__("sagemaker", action, parameters)
 
     def list_resources(self) -> list[Resource]:
         """
-        Get all RDS instances in the account and return them as a list of Resource objects.
+        Get all SageMaker Endpoints in the account and return them as a list of Resource objects.
 
         Returns
         -------
         resources : List[Resource]
         """
         resources = []
-        paginator = self.client.get_paginator("describe_db_instances")
+        paginator = self.client.get_paginator("list_endpoints")
 
-        logger.info("Listing RDS instances")
+        logger.info("Listing SageMaker Endpoints")
 
         try:
             for page in paginator.paginate():
-                for instance in page["DBInstances"]:
+                for endpoint in page["Endpoints"]:
                     try:
-                        tags = self.client.list_tags_for_resource(
-                            ResourceName=instance["DBInstanceArn"]
+                        tags = self.client.list_tags(
+                            ResourceArn=endpoint["EndpointArn"]
                         )
                     except Exception as e:
                         logger.warning(
-                            f"Error listing tags for RDS instance {instance['DBInstanceArn']}: {e}"
+                            f"Error listing tags for SageMaker Endpoint {endpoint['EndpointArn']}: {e}"
                         )
                         continue
 
                     resources.append(
                         Resource(
-                            id_=instance["DBInstanceArn"],
+                            id_=endpoint["EndpointArn"],
                             service=self,
                             tags={
                                 Tag(tag["Key"], tag["Value"])
-                                for tag in tags.get("TagList", [])
+                                for tag in tags.get("Tags", [])
                             },
-                            attributes={"name": instance["DBInstanceIdentifier"]},
+                            attributes={"name": endpoint["EndpointName"]},
                         )
                     )
 
-            logger.info(f"Found {len(resources)} RDS instances")
+            logger.info(f"Found {len(resources)} SageMaker Endpoints")
 
         except Exception as e:
-            logger.error(f"Error listing RDS instances: {e}")
+            logger.error(f"Error listing SageMaker Endpoints: {e}")
             raise e
 
         return resources

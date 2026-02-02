@@ -17,6 +17,69 @@
       }
     ],
     [
+      "semantic-release-replace-plugin",
+      {
+        "replacements": [
+          {
+            "files": ["pyproject.toml"],
+            "from": "version = \".*\"",
+            "to": "version = \"${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "pyproject.toml",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          },
+          {
+            "files": ["README.md"],
+            "from": "version = \">= .*\"",
+            "to": "version = \">= ${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "README.md",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          },
+          {
+            "files": ["docs/index.md"],
+            "from": "version = \">= .*\"",
+            "to": "version = \">= ${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "docs/index.md",
+                "hasChanged": true,
+                "numMatches": 1,
+                "numReplacements": 1
+              }
+            ],
+            "countMatches": true
+          },
+          {
+            "files": ["docs/usage/installation.md"],
+            "from": "version = \">= .*\"",
+            "to": "version = \">= ${nextRelease.version}\"",
+            "results": [
+              {
+                "file": "docs/usage/installation.md",
+                "hasChanged": true,
+                "numMatches": 3,
+                "numReplacements": 3
+              }
+            ],
+            "countMatches": true
+          }
+        ]
+      }
+    ],
+    [
       "@semantic-release/github",
       {
         "success": "This ${issue.pull_request ? 'PR is included' : 'issue has been resolved'} in version ${nextRelease.version} :tada:",
@@ -34,7 +97,11 @@
       "@semantic-release/git",
       {
         "assets": [
-          "CHANGELOG.md"
+          "CHANGELOG.md",
+          "pyproject.toml",
+          "README.md",
+          "docs/index.md",
+          "docs/usage/installation.md"
         ],
         "message": "chore(release): version ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

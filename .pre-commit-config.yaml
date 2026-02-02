@@ -18,12 +18,18 @@ repos:
         - --autofix
     - id: check-added-large-files
     - id: check-merge-conflict
+
+  # Ruff linter and formatter - replaces black, isort, flake8, and more
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.6
+    rev: v0.14.14
     hooks:
+      # Run the linter
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--fix]
+      # Run the formatter
       - id: ruff-format
+
+  # Terraform tooling
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.99.0
     hooks:
@@ -33,6 +39,8 @@ repos:
       - id: terraform_checkov
         args:
           - --args=--quiet
+          - --args=--skip-check=CKV_AWS_117  # Lambda function in VPC (not needed for this use case)
+          - --args=--skip-check=CKV_AWS_116  # Lambda DLQ (not needed for this use case)
       - id: terraform_tflint
         args:
           - '--args=--recursive'
@@ -49,6 +57,7 @@ repos:
           - '--args=--only=terraform_required_version'
           - '--args=--only=terraform_required_providers'
           - '--args=--only=terraform_workspace_remote'
+
 ci:
   autofix_prs: false
   autoupdate_schedule: monthly

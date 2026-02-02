@@ -1,0 +1,77 @@
+{
+  "StartAt": "ListResourcesRedshift",
+  "States": {
+    "ListResourcesRedshift": {
+      "Next": "ResourceMapRedshift",
+      "Parameters": {
+        "FunctionName": "${list_resources_lambda_arn}",
+        "Payload": {
+          "action.$": "$.action",
+          "input.$": "$.input",
+          "service": "redshift"
+        }
+      },
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "ResultPath": "$.lambdaResponse",
+      "ResultSelector": {
+        "resources.$": "$.Payload"
+      },
+      "Retry": [
+        {
+          "BackoffRate": 2,
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 10,
+          "MaxAttempts": 2
+        }
+      ],
+      "Type": "Task"
+    },
+    "ResourceMapRedshift": {
+      "End": true,
+      "ItemsPath": "$.lambdaResponse.resources",
+      "Iterator": {
+        "StartAt": "WaitRedshift",
+        "States": {
+          "ErrorCatcherRedshift": {
+            "End": true,
+            "Type": "Pass"
+          },
+          "ResumeRedshift": {
+            "Catch": [
+              {
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "Next": "ErrorCatcherRedshift"
+              }
+            ],
+            "End": true,
+            "Parameters": {
+              "ClusterIdentifier.$": "$.attributes.name"
+            },
+            "Resource": "arn:aws:states:::aws-sdk:redshift:resumeCluster",
+            "Retry": [
+              {
+                "BackoffRate": 2,
+                "ErrorEquals": [
+                  "States.ALL"
+                ],
+                "IntervalSeconds": 10,
+                "MaxAttempts": 5
+              }
+            ],
+            "Type": "Task"
+          },
+          "WaitRedshift": {
+            "Next": "ResumeRedshift",
+            "TimestampPath": "$.nextExecutionTime",
+            "Type": "Wait"
+          }
+        }
+      },
+      "Type": "Map"
+    }
+  }
+}

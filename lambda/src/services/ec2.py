@@ -1,18 +1,16 @@
 import logging
-from typing import Dict, List
 
-from models import Resource, Tag, Service
+from models import Resource, Service, Tag
 from models.enums import Action
-
 
 logger = logging.getLogger(__name__)
 
 
 class EC2(Service):
-    def __init__(self, action: Action, parameters: Dict = None):
+    def __init__(self, action: Action, parameters: dict | None = None):
         super().__init__("ec2", action, parameters)
 
-    def list_resources(self) -> List[Resource]:
+    def list_resources(self) -> list[Resource]:
         """
         Get all EC2 instances in the account and return them as a list of Resource objects.
 
@@ -34,12 +32,10 @@ class EC2(Service):
                                 Resource(
                                     id_=instance["InstanceId"],
                                     service=self,
-                                    tags=set(
-                                        [
-                                            Tag(tag["Key"], tag["Value"])
-                                            for tag in instance.get("Tags", [])
-                                        ]
-                                    ),
+                                    tags={
+                                        Tag(tag["Key"], tag["Value"])
+                                        for tag in instance.get("Tags", [])
+                                    },
                                 )
                             )
             logger.info(f"Found {len(resources)} EC2 instances")

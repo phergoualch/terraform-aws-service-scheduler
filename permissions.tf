@@ -82,6 +82,40 @@ locals {
         "cloudwatch:DisableAlarmActions"
       ]
     }
+
+    # SageMaker Endpoint permissions
+    sagemaker-endpoint = {
+      describe = [
+        "sagemaker:DescribeEndpoint",
+      ]
+      update = [
+        "sagemaker:UpdateEndpointWeightsAndCapacities"
+      ]
+    }
+
+    # SageMaker Notebook permissions
+    sagemaker-notebook = {
+      update = [
+        "sagemaker:StartNotebookInstance",
+        "sagemaker:StopNotebookInstance"
+      ]
+    }
+
+    # Neptune permissions
+    neptune = {
+      update = [
+        "rds:StartDBCluster",
+        "rds:StopDBCluster"
+      ]
+    }
+
+    # Redshift permissions
+    redshift = {
+      update = [
+        "redshift:PauseCluster",
+        "redshift:ResumeCluster"
+      ]
+    }
   }
 
   list_resources_permissions = {
@@ -142,6 +176,29 @@ locals {
     cloudwatch = [
       "cloudwatch:DescribeAlarms",
       "cloudwatch:ListTagsForResource"
+    ]
+
+    # SageMaker Endpoint permissions
+    sagemaker-endpoint = [
+      "sagemaker:ListEndpoints",
+      "sagemaker:ListTags"
+    ]
+
+    # SageMaker Notebook permissions
+    sagemaker-notebook = [
+      "sagemaker:ListNotebookInstances",
+      "sagemaker:ListTags"
+    ]
+
+    # Neptune permissions
+    neptune = [
+      "rds:DescribeDBClusters",
+      "rds:ListTagsForResource"
+    ]
+
+    # Redshift permissions
+    redshift = [
+      "redshift:DescribeClusters"
     ]
   }
 }

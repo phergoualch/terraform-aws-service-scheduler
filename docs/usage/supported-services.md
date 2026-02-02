@@ -79,3 +79,47 @@ The tags used to define the cluster node type are `scheduler:start-node-type` an
 ## Cloudwatch Alarms
 
 Both metric and composite alarms can be scheduled. When the scheduler initiates a stop, it disables the alarm actions. The scheduler will re-enable the alarm actions when the service is started. This can be used in conjunction with scheduling a resource, to avoid unnecessary alarms during the scheduled downtime.
+
+## SageMaker Endpoints
+
+SageMaker Endpoints can be scheduled to scale to zero instances when stopped and scale back to the original instance count when started. The scheduler stores the current instance count in DynamoDB to restore it during startup.
+
+!!! warning
+    Multi-variant endpoints are supported but only the first production variant's instance count is managed.
+
+    Serverless endpoints are not supported as they manage their own auto-scaling.
+
+## SageMaker Notebook Instances
+
+SageMaker Notebook Instances can be scheduled for automatic start and stop. When stopped, the ML compute instance is terminated while preserving the ML storage volume. The instance is fully restored when started.
+
+!!! note
+    The notebook instance must be in "InService" state to be stopped and "Stopped" state to be started.
+
+    All data on the ML storage volume is preserved during stop/start cycles.
+
+## Neptune
+
+Neptune DB clusters can be scheduled for automatic start and stop. All data is retained as clusters are only stopped, not deleted.
+
+!!! warning
+    Neptune clusters restart automatically after 7 days, this is a limitation of the service.
+
+    You cannot stop a cluster that is part of a global database.
+
+    You cannot stop a cluster that has cross-region read replicas.
+
+## Redshift
+
+Redshift clusters can be scheduled for automatic pause and resume. When paused, the cluster is not billed for compute resources. A snapshot is automatically created when pausing.
+
+!!! warning
+    Resuming a cluster can take several minutes to complete.
+
+    Node IP addresses may change after resuming from a paused state.
+
+    You cannot pause clusters deployed in EC2-Classic.
+
+    You cannot pause clusters with HSM (Hardware Security Module) enabled.
+
+    You cannot pause clusters with automated snapshots disabled.

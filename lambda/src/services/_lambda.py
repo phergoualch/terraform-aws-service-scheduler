@@ -1,17 +1,16 @@
 import logging
-from typing import Dict, List
 
-from models import Resource, Tag, Service
+from models import Resource, Service, Tag
 from models.enums import Action
 
 logger = logging.getLogger(__name__)
 
 
 class Lambda(Service):
-    def __init__(self, action: Action, parameters: Dict = None):
+    def __init__(self, action: Action, parameters: dict | None = None):
         super().__init__("lambda", action, parameters)
 
-    def list_resources(self) -> List[Resource]:
+    def list_resources(self) -> list[Resource]:
         """
         Get all Lambda functions in the account and return them as a list of Resource objects.
 
@@ -39,12 +38,10 @@ class Lambda(Service):
                         Resource(
                             id_=function["FunctionArn"],
                             service=self,
-                            tags=set(
-                                [
-                                    Tag(tag, tags["Tags"][tag])
-                                    for tag in tags.get("Tags", [])
-                                ]
-                            ),
+                            tags={
+                                Tag(tag, tags["Tags"][tag])
+                                for tag in tags.get("Tags", [])
+                            },
                             attributes={"name": function["FunctionName"]},
                         )
                     )
