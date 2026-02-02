@@ -23,58 +23,22 @@
           {
             "files": ["pyproject.toml"],
             "from": "version = \".*\"",
-            "to": "version = \"${nextRelease.version}\"",
-            "results": [
-              {
-                "file": "pyproject.toml",
-                "hasChanged": true,
-                "numMatches": 1,
-                "numReplacements": 1
-              }
-            ],
-            "countMatches": true
+            "to": "version = \"${nextRelease.version}\""
           },
           {
             "files": ["README.md"],
             "from": "version = \">= .*\"",
-            "to": "version = \">= ${nextRelease.version}\"",
-            "results": [
-              {
-                "file": "README.md",
-                "hasChanged": true,
-                "numMatches": 1,
-                "numReplacements": 1
-              }
-            ],
-            "countMatches": true
+            "to": "version = \">= ${nextRelease.version}\""
           },
           {
             "files": ["docs/index.md"],
             "from": "version = \">= .*\"",
-            "to": "version = \">= ${nextRelease.version}\"",
-            "results": [
-              {
-                "file": "docs/index.md",
-                "hasChanged": true,
-                "numMatches": 1,
-                "numReplacements": 1
-              }
-            ],
-            "countMatches": true
+            "to": "version = \">= ${nextRelease.version}\""
           },
           {
             "files": ["docs/usage/installation.md"],
             "from": "version = \">= .*\"",
-            "to": "version = \">= ${nextRelease.version}\"",
-            "results": [
-              {
-                "file": "docs/usage/installation.md",
-                "hasChanged": true,
-                "numMatches": 3,
-                "numReplacements": 3
-              }
-            ],
-            "countMatches": true
+            "to": "version = \">= ${nextRelease.version}\""
           }
         ]
       }
